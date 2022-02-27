@@ -8,3 +8,5 @@ Daniel Gu - wenyugu2@illinois.edu (Team Leader)
 Anthony Yu - siyiyu2@illinois.edu
 
 Yudu Chen - yuduc2@illinois.edu
+
+Jeff Shin - wonjong2@illinois.edu
