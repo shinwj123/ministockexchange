@@ -61,10 +61,14 @@ Jeff Shin:
 ## Protocol for submitting orders/receiving updates
 We can either follow standard FIX protocol or come up with a simplified version.
 IEX FIX Spec
-[](https://github.com/WojciechZankowski/iextrading4j-fix#description)
+
+https://github.com/WojciechZankowski/iextrading4j-fix#description
+
 Better binary protocol
-[](https://github.com/real-logic/simple-binary-encoding)
-[](https://github.com/real-logic/aeron)
+
+https://github.com/real-logic/simple-binary-encoding
+
+https://github.com/real-logic/aeron
 
 
 ## Client
@@ -109,8 +113,9 @@ The Ticker Plant receives market feed updates and distributes the market data fe
 We can evaluate the performance of the system by the following benchmarks.
 End-to-end latency (second/orders)
 Throughput (orders/second)
-[](https://medium.com/@InternationalCryptox./matching-engine-tps-and-latency-metrics-from-the-incx-lab-1d4f19e60805)
-[](https://habr.com/en/post/581170/)
+https://medium.com/@InternationalCryptox./matching-engine-tps-and-latency-metrics-from-the-incx-lab-1d4f19e60805
+
+https://habr.com/en/post/581170/
 
 ## Testing
 We plan to test the system by having multiple clients (~10-20) connected by using Vagrant and the system should scale well with reasonable latency. We can also stress test by sending large volume of trading orders at the same time from a single machine, eg. 500,000 orders/s
