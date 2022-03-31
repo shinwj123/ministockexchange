@@ -13,3 +13,7 @@ https://www.infoq.com/presentations/financial-exchange-architecture/
 https://habr.com/en/post/581170/
 
 https://arxiv.org/pdf/2102.10925.pdf
+
+https://arxiv.org/pdf/1909.12926.pdf
+
+https://signalsandthreads.com/multicast-and-the-markets/
