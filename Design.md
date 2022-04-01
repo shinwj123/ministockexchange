@@ -6,29 +6,39 @@ Plan setup & architecture
 ## Week 10
 Client & Gateway development
 
-Client & Gateway: yuduc2
+Client & Gateway: wonjong2
 
-Order matching engine: wenyugu2, wonjong2
+Order matching engine: wenyugu2
+
+Tickerplant: yuduc2
 
 ## Week 11
-Gateway & Order matching engine development(cont.) yuduc2 wenyugu2 wonjong2
+Order matching engine development(cont.)  wenyugu2 
 
-Client & Gateway integration test: wenyugu2
+Client & Gateway: wonjong2
+
+Tickerplant: yuduc2
 
 ## Week 12
-Order matching engine development(cont.) wenyugu2, wonjong2
+Order matching engine development(cont.) wenyugu2
 
-ESB integration:  yuduc2, wenyugu2
+Client & Gateway integration test: wonjong2
+
+ESB integration:  yuduc2, wenyugu2, wonjong2
+
+Tickerplant: yuduc2
 
 ## Week 13
-Order matching engine self & integration test: wenyugu2, wonjong2
+Order matching engine self & integration test: wenyugu2
 
-Ticker plant: yuduc2, wonjong2
+Client & Gateway integration test: wonjong2
+
+Ticker plant test: yuduc2
 
 ## Week 14
-Ticker plant development(cont.)
+Debugging & testing: yuduc2, wenyugu2, wonjong2
 
-Ticker plant & integration test: yuduc2, wenyugu2, wonjong2
+Performance/stress test: yuduc2, wenyugu2, wonjong2
 
 ## Week 15
 Final integration test
