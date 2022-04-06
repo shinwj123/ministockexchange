@@ -1,9 +1,9 @@
-package TickerPlant_Core_main;
+package TickerPlantCoremain;
 
 import java.util.Comparator;
 import java.util.List;
 
-import TickerPlant_API_main.PriceLevel;
+import TickerPlantAPImain.PriceLevel;
 
 public class entireOrderBook extends BookSide {
     private final String stockSymbol;
@@ -12,7 +12,7 @@ public class entireOrderBook extends BookSide {
     private final BookSide askSide;
 
     public entireOrderBookrderBook(final String symbol) {
-        this.symbol = symbol;
+        this.stockSymbol = symbol;
         this.bidSide = new BookSide(Comparator.reverseOrder());
         this.askSide = new BookSide(Comparator.naturalOrder());
     }
@@ -26,7 +26,7 @@ public class entireOrderBook extends BookSide {
 
     @Override
     public String getSymbol() {
-        return stockSymbol
+        return stockSymbol;
     }
 
     @Override

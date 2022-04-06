@@ -1,4 +1,4 @@
-package TickerPlantMessaging_main;
+package TickerPlantMessagingmain;
 
 public class MarketDataPublisher {
 }

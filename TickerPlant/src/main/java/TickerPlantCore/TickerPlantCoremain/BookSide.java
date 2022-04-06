@@ -1,6 +1,6 @@
-package TickerPlant_Core_main;
+package TickerPlantCoremain;
 
-import TickerPlant_API_main.PriceLevel;
+import TickerPlantAPImain.PriceLevel;
 
 import java.util.ArrayList;
 import java.util.Comparator;

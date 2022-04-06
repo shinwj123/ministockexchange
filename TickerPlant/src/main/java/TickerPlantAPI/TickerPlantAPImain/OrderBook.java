@@ -1,4 +1,4 @@
-package TickerPlant_API_main;
+package TickerPlantAPImain;
 import java.util.List;
 
 public interface OrderBook {
