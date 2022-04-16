@@ -76,8 +76,10 @@ public class SimpleGateway implements FragmentHandler {
                   .endpoint("localhost:40123")
                   .build();
           SimpleGateway gw = new SimpleGateway("/dev/shm/aeron", pubUri, args[0], 10);
+          logger.info("Starting gateway...");
           gw.start();
           new SigIntBarrier().await();
+          logger.info("Shutting down gateway...");
           gw.stop();
       }
   }

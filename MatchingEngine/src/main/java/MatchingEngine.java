@@ -89,11 +89,11 @@ public class MatchingEngine implements FragmentHandler {
                     .endpoint("localhost:40123")
                     .build();
             MatchingEngine me = new MatchingEngine("/dev/shm/aeron", matchingEngineUri, 10);
-            me.start();
             logger.info("Starting Matching Engine...");
+            me.start();
             new SigIntBarrier().await();
-            me.stop();
             logger.info("Shutting down Matching Engine...");
+            me.stop();
         }
     }
 }
