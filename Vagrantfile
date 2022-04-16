@@ -29,6 +29,7 @@ Vagrant.configure("2") do |config|
             end
 
             me.vm.network "private_network", ip: "192.168.1.10#{i}", virtualbox__intnet: "exchange_network", nic_type: "virtio"
+            me.vm.provision "shell", path: "scripts/install.sh"
             me.vm.provision "shell", path: "scripts/me_setup.sh"
         end
     end
@@ -44,6 +45,7 @@ Vagrant.configure("2") do |config|
             end
 
             gateway.vm.network "private_network", ip: "192.168.0.10#{i}", virtualbox__intnet: "exchange_network", nic_type: "virtio"
+            gateway.vm.provision "shell", path: "scripts/install.sh"
             gateway.vm.provision "shell", path: "scripts/gateway_setup.sh"
         end
     end
