@@ -6,6 +6,7 @@ import io.aeron.logbuffer.Header;
 import org.agrona.BufferUtil;
 import org.agrona.DirectBuffer;
 import org.agrona.collections.Int2ObjectHashMap;
+import org.agrona.concurrent.SigInt;
 import org.agrona.concurrent.SigIntBarrier;
 import org.agrona.concurrent.UnsafeBuffer;
 import org.apache.logging.log4j.Logger;
@@ -91,9 +92,8 @@ public class MatchingEngine implements FragmentHandler {
             MatchingEngine me = new MatchingEngine("/dev/shm/aeron", matchingEngineUri, 10);
             logger.info("Starting Matching Engine...");
             me.start();
+            SigInt.register(() -> {logger.info("Shutting down Matching Engine..."); me.stop();});
             new SigIntBarrier().await();
-            logger.info("Shutting down Matching Engine...");
-            me.stop();
         }
     }
 }

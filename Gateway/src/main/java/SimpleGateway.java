@@ -5,6 +5,7 @@ import io.aeron.logbuffer.FragmentHandler;
 import io.aeron.logbuffer.Header;
 import org.agrona.BufferUtil;
 import org.agrona.DirectBuffer;
+import org.agrona.concurrent.SigInt;
 import org.agrona.concurrent.SigIntBarrier;
 import org.agrona.concurrent.UnsafeBuffer;
 import org.apache.logging.log4j.LogManager;
@@ -78,9 +79,8 @@ public class SimpleGateway implements FragmentHandler {
           SimpleGateway gw = new SimpleGateway("/dev/shm/aeron", pubUri, args[0], 10);
           logger.info("Starting gateway...");
           gw.start();
+          SigInt.register(() -> {logger.info("Shutting down gateway..."); gw.stop();});
           new SigIntBarrier().await();
-          logger.info("Shutting down gateway...");
-          gw.stop();
       }
   }
 }
