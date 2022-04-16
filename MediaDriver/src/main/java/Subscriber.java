@@ -5,11 +5,13 @@ import io.aeron.Subscription;
 import io.aeron.logbuffer.FragmentHandler;
 import org.agrona.CloseHelper;
 import org.agrona.collections.Object2ObjectHashMap;
+import org.agrona.concurrent.BackoffIdleStrategy;
 import org.agrona.concurrent.BusySpinIdleStrategy;
 import org.agrona.concurrent.IdleStrategy;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 public class Subscriber {
@@ -18,29 +20,25 @@ public class Subscriber {
     private final int fragmentLimitCount;
     private final Object2ObjectHashMap <String, Subscription> subscriptions;
     private final AtomicBoolean running = new AtomicBoolean(true);
-    IdleStrategy idleStrategy;
+    private final IdleStrategy idleStrategy;
     private static final Logger logger = LogManager.getLogger(Subscriber.class);
 
-    public Subscriber(String aeronDirectory, FragmentHandler fragmentHandler, int fragmentLimitCount) {
+    public Subscriber(Aeron aeron, FragmentHandler fragmentHandler, int fragmentLimitCount) {
         this.fragmentHandler = fragmentHandler;
         this.fragmentLimitCount = fragmentLimitCount;
         this.subscriptions = new Object2ObjectHashMap<>();
-        Aeron.Context ctx = new Aeron.Context()
-                .aeronDirectoryName(aeronDirectory)
-                .errorHandler(this::printError);
-        aeron = Aeron.connect(ctx);
-        idleStrategy = new BusySpinIdleStrategy();
+        this.aeron = aeron;
+        idleStrategy = new BackoffIdleStrategy(
+                100, 10, TimeUnit.MICROSECONDS.toNanos(1), TimeUnit.MICROSECONDS.toNanos(100));
     }
 
-    public Subscriber(String aeronDirectory, FragmentHandler fragmentHandler) {
+    public Subscriber(Aeron aeron, FragmentHandler fragmentHandler) {
         this.fragmentHandler = fragmentHandler;
         this.fragmentLimitCount = 1;
         this.subscriptions = new Object2ObjectHashMap<>();
-        Aeron.Context ctx = new Aeron.Context()
-                .aeronDirectoryName(aeronDirectory)
-                .errorHandler(this::printError);
-        aeron = Aeron.connect(ctx);
-        idleStrategy = new BusySpinIdleStrategy();
+        this.aeron = aeron;
+        idleStrategy = new BackoffIdleStrategy(
+                100, 10, TimeUnit.MICROSECONDS.toNanos(1), TimeUnit.MICROSECONDS.toNanos(100));
     }
 
     public void addSubscription(String channel,int streamId){

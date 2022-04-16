@@ -1,4 +1,6 @@
+import io.aeron.Aeron;
 import io.aeron.ChannelUriStringBuilder;
+import io.aeron.driver.MediaDriver;
 import io.aeron.logbuffer.FragmentHandler;
 import io.aeron.logbuffer.Header;
 import org.agrona.BufferUtil;
@@ -9,6 +11,7 @@ import org.agrona.concurrent.UnsafeBuffer;
 import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.LogManager;
 
+import javax.print.attribute.standard.Media;
 import java.net.InetSocketAddress;
 import java.nio.file.Path;
 import java.util.Objects;
@@ -16,6 +19,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 
 public class MatchingEngine implements FragmentHandler {
     // Matching Engine per group of securities
+    private final Aeron aeron;
 //    private Publisher marketDataPublisher;
     private Publisher gatewayPublisher;
     private Subscriber gatewaySubscriber;
@@ -26,17 +30,22 @@ public class MatchingEngine implements FragmentHandler {
             .reliable(true)
             .media("udp")
             .endpoint("224.0.1.1:40456")
-            .networkInterface("localhost")
+            .networkInterface("192.168.0.1")
             .build();
 
 
     public MatchingEngine(String aeronDirectory, String matchingEngineUri, int streamId) {
-//        marketDataPublisher = new Publisher(aeronDirectory);
-        gatewayPublisher = new Publisher(aeronDirectory);
-        gatewaySubscriber = new Subscriber(aeronDirectory, this);
+        Aeron.Context ctx = new Aeron.Context()
+                .aeronDirectoryName(aeronDirectory)
+                .errorHandler(AeronUtil::printError)
+                .availableImageHandler(AeronUtil::printAvailableImage)
+                .unavailableImageHandler(AeronUtil::printUnavailableImage);
+        this.aeron = Aeron.connect(ctx);
+//        marketDataPublisher = new Publisher(this.aeron);
+        gatewayPublisher = new Publisher(this.aeron);
+        gatewaySubscriber = new Subscriber(this.aeron, this);
 
         // same multicast address for all matching engines
-
         gatewayPublisher.addPublication(gatewayUri, streamId);
         gatewaySubscriber.addSubscription(matchingEngineUri, streamId);
     }
@@ -51,12 +60,11 @@ public class MatchingEngine implements FragmentHandler {
                 "Received message ({}) from session {} term id {} term offset {}",
                 new String(data), session,
                 header.termId(), header.termOffset());
-        
 
         final int numBytes = outBuffer.putStringAscii(0, "OK " + session);
         boolean result = gatewayPublisher.sendMessage(outBuffer, gatewayUri, 10);
         if (result) {
-            logger.debug("successfully send to gateway");
+            logger.debug("successfully sent to gateway");
         } else {
             logger.debug("failed to send to gateway");
         }
@@ -74,15 +82,18 @@ public class MatchingEngine implements FragmentHandler {
     }
 
     public static void main(String[] args) {
-        final String matchingEngineUri = new ChannelUriStringBuilder()
-                .reliable(true)
-                .media("udp")
-                .endpoint("localhost:40123")
-                .build();
-        MatchingEngine me = new MatchingEngine("/dev/shm/aeron", matchingEngineUri, 10);
-        me.start();
-        new SigIntBarrier().await();
-        me.stop();
-
+        try (MediaDriver ignore = BasicMediaDriver.start("/dev/shm/aeron")) {
+            final String matchingEngineUri = new ChannelUriStringBuilder()
+                    .reliable(true)
+                    .media("udp")
+                    .endpoint("localhost:40123")
+                    .build();
+            MatchingEngine me = new MatchingEngine("/dev/shm/aeron", matchingEngineUri, 10);
+            me.start();
+            logger.info("Starting Matching Engine...");
+            new SigIntBarrier().await();
+            me.stop();
+            logger.info("Shutting down Matching Engine...");
+        }
     }
 }

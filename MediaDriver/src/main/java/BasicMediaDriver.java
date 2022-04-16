@@ -24,7 +24,10 @@ public class BasicMediaDriver {
   public static MediaDriver start(String dir) {
     MediaDriver.Context ctx = new MediaDriver.Context()
             .dirDeleteOnStart(true)
-            .aeronDirectoryName(dir);
+            .aeronDirectoryName(dir)
+            .socketRcvbufLength(2097152)
+            .socketSndbufLength(2097152)
+            .initialWindowLength(2097152);
 
     return MediaDriver.launchEmbedded(ctx);
   }

@@ -4,6 +4,8 @@ import io.aeron.Publication;
 import io.aeron.Subscription;
 import org.agrona.CloseHelper;
 import org.agrona.collections.Object2ObjectHashMap;
+import org.agrona.concurrent.BusySpinIdleStrategy;
+import org.agrona.concurrent.IdleStrategy;
 import org.agrona.concurrent.UnsafeBuffer;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -15,15 +17,12 @@ public class Publisher {
     private final AtomicBoolean running = new AtomicBoolean(true);
     private final Object2ObjectHashMap<String, Publication> publications;
     private static final Logger logger = LogManager.getLogger(Publisher.class);
+    private final IdleStrategy idleStrategy;
 
-    public Publisher(String aeronDirectory) {
+    public Publisher(Aeron aeron) {
+        this.aeron = aeron;
         this.publications = new Object2ObjectHashMap<>();
-        Aeron.Context ctx = new Aeron.Context()
-                .aeronDirectoryName(aeronDirectory)
-                .errorHandler(this::printError)
-                .availableImageHandler(this::printAvailableImage)
-                .unavailableImageHandler(this::printUnavailableImage);
-        aeron = Aeron.connect(ctx);
+        idleStrategy = new BusySpinIdleStrategy();
     }
 
     public void addPublication(String channel, int streamId) {
@@ -31,11 +30,15 @@ public class Publisher {
     }
 
     public boolean sendMessage(final UnsafeBuffer buffer, final String channel, int streamId) {
-        // publication.offer makes a copy of the buffer. User tryClaim to avoid a copy
+        // publication.offer makes a copy of the buffer. Use tryClaim to avoid a copy
         if (buffer != null && running.get()) {
             Publication pub = publications.get(getKey(channel, streamId));
             long response = 0;
-            for (int retry = 0; retry < 3; retry++) {
+            while (!pub.isConnected())
+            {
+                Thread.yield();
+            }
+            for (int retry = 0; retry < 5; retry++) {
                 response = pub.offer(buffer);
                 if (response > 0) {
                     return true;
@@ -62,26 +65,10 @@ public class Publisher {
         return false;
     }
 
-    public void printAvailableImage(final Image image) {
-        final Subscription subscription = image.subscription();
-        System.out.printf(
-                "Available image on %s streamId=%d sessionId=%d from %s%n",
-                subscription.channel(), subscription.streamId(), image.sessionId(), image.sourceIdentity());
-    }
 
-    public void printUnavailableImage(final Image image) {
-        final Subscription subscription = image.subscription();
-        System.out.printf(
-                "Unavailable image on %s streamId=%d sessionId=%d%n",
-                subscription.channel(), subscription.streamId(), image.sessionId());
-    }
 
     private String getKey(String channel,int streamId){
         return channel + "_" + streamId;
-    }
-
-    private void printError(Throwable throwable){
-        System.out.println(throwable.toString());
     }
 
     public void stop() {
