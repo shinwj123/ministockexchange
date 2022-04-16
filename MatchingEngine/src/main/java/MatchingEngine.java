@@ -30,7 +30,7 @@ public class MatchingEngine implements FragmentHandler {
             .reliable(true)
             .media("udp")
             .endpoint("224.0.1.1:40456")
-            .networkInterface("192.168.0.1")
+            .networkInterface("192.168.1.101")
             .build();
 
 
