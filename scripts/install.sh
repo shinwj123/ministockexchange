@@ -7,7 +7,15 @@ sudo yum install -y git
 sudo yum install -y tcpdump
 sudo yum install -y iperf
 sudo yum install -y java-11-openjdk-devel
-sudo yum install -y maven
+# install maven and configure
+sudo wget --no-check-certificate https://dlcdn.apache.org/maven/maven-3/3.8.5/binaries/apache-maven-3.8.5-bin.tar.gz -P /tmp
+sudo tar xf /tmp/apache-maven-3.8.5-bin.tar.gz -C /opt
+sudo mv /opt/apache-maven-3.8.5/ /opt/maven/
+echo "export M2_HOME=/opt/maven" | sudo tee -a /etc/profile.d/maven.sh
+echo "export MAVEN_HOME=/opt/maven" | sudo tee -a /etc/profile.d/maven.sh
+echo "export PATH=${M2_HOME}/bin:${PATH}" | sudo tee -a /etc/profile.d/maven.sh
+sudo chmod +x /etc/profile.d/maven.sh
+source /etc/profile.d/maven.sh
 # change default java version
 sudo alternatives --set javac /usr/lib/jvm/java-11-openjdk-11.0.14.1.1-1.el7_9.x86_64/bin/javac
 sudo alternatives --set java /usr/lib/jvm/java-11-openjdk-11.0.14.1.1-1.el7_9.x86_64/bin/java
