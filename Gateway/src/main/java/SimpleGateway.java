@@ -59,6 +59,7 @@ public final class SimpleGateway implements FragmentHandler, AutoCloseable {
 
     public void start() {
         final Random random = new Random();
+        running.set(true);
         matchingEngineSubscriber.start();
         while (running.get()) {
             final int numBytes = outBuffer.putStringAscii(0, Integer.toUnsignedString(random.nextInt()));
@@ -72,6 +73,7 @@ public final class SimpleGateway implements FragmentHandler, AutoCloseable {
         logger.info("Shutting down gateway...");
         running.set(false);
         matchingEnginePublisher.stop();
+        matchingEngineSubscriber.stop();
         CloseHelper.close(aeron);
     }
 
@@ -85,7 +87,6 @@ public final class SimpleGateway implements FragmentHandler, AutoCloseable {
            SimpleGateway gw = new SimpleGateway("/dev/shm/aeron", pubUri, args[0], Integer.parseInt(args[1]))) {
           logger.info("Starting gateway...");
           gw.start();
-          new SigIntBarrier().await();
       }
   }
 }

@@ -96,7 +96,6 @@ public final class MatchingEngine implements FragmentHandler, AutoCloseable {
              MatchingEngine me = new MatchingEngine("/dev/shm/aeron", matchingEngineUri, 10)) {
             logger.info("Starting Matching Engine...");
             me.start();
-            new SigIntBarrier().await();
         }
     }
 }
