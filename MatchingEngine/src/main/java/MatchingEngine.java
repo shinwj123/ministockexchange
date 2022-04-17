@@ -31,7 +31,7 @@ public class MatchingEngine implements FragmentHandler {
             .reliable(true)
             .media("udp")
             .endpoint("224.0.1.1:40456")
-            .networkInterface("192.168.1.101")
+            .networkInterface("192.168.0.51")
             .build();
 
 
@@ -87,7 +87,7 @@ public class MatchingEngine implements FragmentHandler {
             final String matchingEngineUri = new ChannelUriStringBuilder()
                     .reliable(true)
                     .media("udp")
-                    .endpoint("192.168.1.101:40123")
+                    .endpoint("192.168.0.51:40123")
                     .build();
             MatchingEngine me = new MatchingEngine("/dev/shm/aeron", matchingEngineUri, 10);
             logger.info("Starting Matching Engine...");

@@ -28,7 +28,7 @@ Vagrant.configure("2") do |config|
                 vb.customize ["modifyvm", :id, "--cpus", "2"]
             end
 
-            me.vm.network "private_network", ip: "192.168.1.10#{i}", virtualbox__intnet: "exchange_network", nic_type: "virtio"
+            me.vm.network "private_network", ip: "192.168.0.5#{i}", virtualbox__intnet: "exchange_network", nic_type: "virtio"
             me.vm.provision "shell", path: "scripts/install.sh"
             me.vm.provision "shell", path: "scripts/me_setup.sh"
         end
