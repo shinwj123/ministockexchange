@@ -25,7 +25,6 @@ public final class MatchingEngine implements FragmentHandler, AutoCloseable {
 //    private Publisher marketDataPublisher;
     private Publisher gatewayPublisher;
     private Subscriber gatewaySubscriber;
-    private final AtomicBoolean running = new AtomicBoolean(false);
     private static final Logger logger = LogManager.getLogger(MatchingEngine.class);
     final UnsafeBuffer outBuffer = new UnsafeBuffer(BufferUtil.allocateDirectAligned(256, 64));
     static final String gatewayUri = new ChannelUriStringBuilder()
@@ -72,21 +71,24 @@ public final class MatchingEngine implements FragmentHandler, AutoCloseable {
         }
     }
 
-    public void start() {
-        running.set(true);
+    public void start(AtomicBoolean running) {
         gatewaySubscriber.start();
+        while (running.get()) {
+            logger.info("ME running...");
+        }
     }
 
     @Override
     public void close() {
         logger.info("Shutting down Matching Engine...");
-        running.set(false);
         gatewayPublisher.stop();
         gatewaySubscriber.stop();
         CloseHelper.close(aeron);
     }
 
     public static void main(String[] args) {
+        final AtomicBoolean running = new AtomicBoolean(true);
+        SigInt.register(() -> running.set(false));
         final String matchingEngineUri = new ChannelUriStringBuilder()
                 .reliable(true)
                 .media("udp")
@@ -95,7 +97,7 @@ public final class MatchingEngine implements FragmentHandler, AutoCloseable {
         try (MediaDriver ignore = BasicMediaDriver.start("/dev/shm/aeron");
              MatchingEngine me = new MatchingEngine("/dev/shm/aeron", matchingEngineUri, 10)) {
             logger.info("Starting Matching Engine...");
-            me.start();
+            me.start(running);
         }
     }
 }

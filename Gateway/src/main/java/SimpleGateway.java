@@ -19,7 +19,6 @@ public final class SimpleGateway implements FragmentHandler, AutoCloseable {
     private final Aeron aeron;
     private Publisher matchingEnginePublisher;
     private Subscriber matchingEngineSubscriber;
-    private final AtomicBoolean running = new AtomicBoolean(false);
     private static final Logger logger = LogManager.getLogger(SimpleGateway.class);
     final UnsafeBuffer outBuffer = new UnsafeBuffer(BufferUtil.allocateDirectAligned(256, 64));
     private final String gatewayPubUri;
@@ -57,9 +56,8 @@ public final class SimpleGateway implements FragmentHandler, AutoCloseable {
                 new String(data));
     }
 
-    public void start() {
+    public void start(AtomicBoolean running) {
         final Random random = new Random();
-        running.set(true);
         matchingEngineSubscriber.start();
         while (running.get()) {
             final int numBytes = outBuffer.putStringAscii(0, Integer.toUnsignedString(random.nextInt()));
@@ -71,13 +69,14 @@ public final class SimpleGateway implements FragmentHandler, AutoCloseable {
     @Override
     public void close() {
         logger.info("Shutting down gateway...");
-        running.set(false);
         matchingEnginePublisher.stop();
         matchingEngineSubscriber.stop();
         CloseHelper.close(aeron);
     }
 
   public static void main(String[] args) {
+      final AtomicBoolean running = new AtomicBoolean(true);
+      SigInt.register(() -> running.set(false));
       final String pubUri = new ChannelUriStringBuilder()
               .reliable(true)
               .media("udp")
@@ -86,7 +85,7 @@ public final class SimpleGateway implements FragmentHandler, AutoCloseable {
       try (MediaDriver ignore = BasicMediaDriver.start("/dev/shm/aeron");
            SimpleGateway gw = new SimpleGateway("/dev/shm/aeron", pubUri, args[0], Integer.parseInt(args[1]))) {
           logger.info("Starting gateway...");
-          gw.start();
+          gw.start(running);
       }
   }
 }
