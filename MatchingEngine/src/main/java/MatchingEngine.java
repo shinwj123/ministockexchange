@@ -18,7 +18,7 @@ import java.nio.file.Path;
 import java.util.Objects;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-public class MatchingEngine implements FragmentHandler {
+public final class MatchingEngine implements FragmentHandler, AutoCloseable {
     // Matching Engine per group of securities
     private final Aeron aeron;
 //    private Publisher marketDataPublisher;
@@ -76,23 +76,24 @@ public class MatchingEngine implements FragmentHandler {
         gatewaySubscriber.start();
     }
 
-    public void stop() {
+    @Override
+    public void close() {
+        logger.info("Shutting down Matching Engine...");
         running.set(false);
         gatewayPublisher.stop();
         gatewaySubscriber.stop();
     }
 
     public static void main(String[] args) {
-        try (MediaDriver ignore = BasicMediaDriver.start("/dev/shm/aeron")) {
-            final String matchingEngineUri = new ChannelUriStringBuilder()
-                    .reliable(true)
-                    .media("udp")
-                    .endpoint("192.168.0.51:40123")
-                    .build();
-            MatchingEngine me = new MatchingEngine("/dev/shm/aeron", matchingEngineUri, 10);
+        final String matchingEngineUri = new ChannelUriStringBuilder()
+                .reliable(true)
+                .media("udp")
+                .endpoint("192.168.0.51:40123")
+                .build();
+        try (MediaDriver ignore = BasicMediaDriver.start("/dev/shm/aeron");
+             MatchingEngine me = new MatchingEngine("/dev/shm/aeron", matchingEngineUri, 10)) {
             logger.info("Starting Matching Engine...");
             me.start();
-            SigInt.register(() -> {logger.info("Shutting down Matching Engine..."); me.stop();});
         }
     }
 }

@@ -14,7 +14,7 @@ import org.apache.logging.log4j.Logger;
 import java.util.Random;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-public class SimpleGateway implements FragmentHandler {
+public final class SimpleGateway implements FragmentHandler, AutoCloseable {
     private final Aeron aeron;
     private Publisher matchingEnginePublisher;
     private Subscriber matchingEngineSubscriber;
@@ -63,23 +63,24 @@ public class SimpleGateway implements FragmentHandler {
         matchingEnginePublisher.sendMessage(outBuffer, gatewayPubUri, 10);
     }
 
-    public void stop() {
+    @Override
+    public void close() {
+        logger.info("Shutting down gateway...");
         running.set(false);
         matchingEnginePublisher.stop();
         matchingEngineSubscriber.stop();
     }
 
   public static void main(String[] args) {
-      try (MediaDriver ignore = BasicMediaDriver.start("/dev/shm/aeron")) {
-          final String pubUri = new ChannelUriStringBuilder()
-                  .reliable(true)
-                  .media("udp")
-                  .endpoint("192.168.0.51:40123")
-                  .build();
-          SimpleGateway gw = new SimpleGateway("/dev/shm/aeron", pubUri, args[0], 10);
+      final String pubUri = new ChannelUriStringBuilder()
+              .reliable(true)
+              .media("udp")
+              .endpoint("192.168.0.51:40123")
+              .build();
+      try (MediaDriver ignore = BasicMediaDriver.start("/dev/shm/aeron");
+           SimpleGateway gw = new SimpleGateway("/dev/shm/aeron", pubUri, args[0], 10)) {
           logger.info("Starting gateway...");
           gw.start();
-          SigInt.register(() -> {logger.info("Shutting down gateway..."); gw.stop();});
       }
   }
 }
