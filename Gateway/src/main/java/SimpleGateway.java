@@ -23,6 +23,7 @@ public final class SimpleGateway implements FragmentHandler, AutoCloseable {
     final UnsafeBuffer outBuffer = new UnsafeBuffer(BufferUtil.allocateDirectAligned(256, 64));
     private final String gatewayPubUri;
     private int streamId;
+    private Thread subThread;
 
     public SimpleGateway(String aeronDirectory, String gatewayPubUri, String iface, int streamId) {
         // TODO add subscription for all matching engines, one streamId per ME
@@ -59,9 +60,9 @@ public final class SimpleGateway implements FragmentHandler, AutoCloseable {
     public void start() {
         final Random random = new Random();
         final int numBytes = outBuffer.putStringAscii(0, Integer.toUnsignedString(random.nextInt()));
-
+        subThread = new Thread(() -> matchingEngineSubscriber.start());
+        subThread.start();
         matchingEnginePublisher.sendMessage(outBuffer, gatewayPubUri, 10);
-        matchingEngineSubscriber.start();
     }
 
     @Override
@@ -69,7 +70,7 @@ public final class SimpleGateway implements FragmentHandler, AutoCloseable {
         logger.info("Shutting down gateway...");
         running.set(false);
         matchingEnginePublisher.stop();
-        matchingEngineSubscriber.stop();
+        subThread.interrupt();
     }
 
   public static void main(String[] args) {
@@ -82,6 +83,7 @@ public final class SimpleGateway implements FragmentHandler, AutoCloseable {
            SimpleGateway gw = new SimpleGateway("/dev/shm/aeron", pubUri, args[0], 10)) {
           logger.info("Starting gateway...");
           gw.start();
+          new SigIntBarrier().await();
       }
   }
 }
