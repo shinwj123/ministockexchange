@@ -10,6 +10,7 @@ import org.agrona.concurrent.UnsafeBuffer;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 public class Publisher {
@@ -59,6 +60,12 @@ public class Publisher {
                 }
                 if (!pub.isConnected()) {
                     logger.debug("No active subscribers detected");
+                }
+
+                try {
+                    Thread.sleep(TimeUnit.SECONDS.toMillis(1));
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
                 }
             }
         }

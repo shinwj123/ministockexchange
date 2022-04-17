@@ -64,6 +64,7 @@ public final class MatchingEngine implements FragmentHandler, AutoCloseable {
 
         final int numBytes = outBuffer.putStringAscii(0, "OK " + session);
         boolean result = gatewayPublisher.sendMessage(outBuffer, gatewayUri, 10);
+
         if (result) {
             logger.debug("successfully sent to gateway");
         } else {
@@ -86,7 +87,7 @@ public final class MatchingEngine implements FragmentHandler, AutoCloseable {
         CloseHelper.close(aeron);
     }
 
-    public static void main(String[] args) {
+    public static void main(String[] args) throws InterruptedException {
         final AtomicBoolean running = new AtomicBoolean(true);
         SigInt.register(() -> running.set(false));
         final String matchingEngineUri = new ChannelUriStringBuilder()
