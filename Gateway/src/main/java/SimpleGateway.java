@@ -80,7 +80,6 @@ public class SimpleGateway implements FragmentHandler {
           logger.info("Starting gateway...");
           gw.start();
           SigInt.register(() -> {logger.info("Shutting down gateway..."); gw.stop();});
-          new SigIntBarrier().await();
       }
   }
 }

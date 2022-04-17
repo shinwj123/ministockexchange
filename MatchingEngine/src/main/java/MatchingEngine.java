@@ -93,7 +93,6 @@ public class MatchingEngine implements FragmentHandler {
             logger.info("Starting Matching Engine...");
             me.start();
             SigInt.register(() -> {logger.info("Shutting down Matching Engine..."); me.stop();});
-            new SigIntBarrier().await();
         }
     }
 }
