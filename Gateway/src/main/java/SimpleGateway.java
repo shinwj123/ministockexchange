@@ -4,6 +4,7 @@ import io.aeron.driver.MediaDriver;
 import io.aeron.logbuffer.FragmentHandler;
 import io.aeron.logbuffer.Header;
 import org.agrona.BufferUtil;
+import org.agrona.CloseHelper;
 import org.agrona.DirectBuffer;
 import org.agrona.concurrent.SigInt;
 import org.agrona.concurrent.SigIntBarrier;
@@ -22,8 +23,7 @@ public final class SimpleGateway implements FragmentHandler, AutoCloseable {
     private static final Logger logger = LogManager.getLogger(SimpleGateway.class);
     final UnsafeBuffer outBuffer = new UnsafeBuffer(BufferUtil.allocateDirectAligned(256, 64));
     private final String gatewayPubUri;
-    private int streamId;
-    private Thread subThread;
+    private final int streamId;
 
     public SimpleGateway(String aeronDirectory, String gatewayPubUri, String iface, int streamId) {
         // TODO add subscription for all matching engines, one streamId per ME
@@ -59,10 +59,12 @@ public final class SimpleGateway implements FragmentHandler, AutoCloseable {
 
     public void start() {
         final Random random = new Random();
-        final int numBytes = outBuffer.putStringAscii(0, Integer.toUnsignedString(random.nextInt()));
-        subThread = new Thread(() -> matchingEngineSubscriber.start());
-        subThread.start();
-        matchingEnginePublisher.sendMessage(outBuffer, gatewayPubUri, 10);
+        matchingEngineSubscriber.start();
+        while (running.get()) {
+            final int numBytes = outBuffer.putStringAscii(0, Integer.toUnsignedString(random.nextInt()));
+            matchingEnginePublisher.sendMessage(outBuffer, gatewayPubUri, streamId);
+        }
+
     }
 
     @Override
@@ -70,7 +72,7 @@ public final class SimpleGateway implements FragmentHandler, AutoCloseable {
         logger.info("Shutting down gateway...");
         running.set(false);
         matchingEnginePublisher.stop();
-        subThread.interrupt();
+        CloseHelper.close(aeron);
     }
 
   public static void main(String[] args) {
@@ -80,7 +82,7 @@ public final class SimpleGateway implements FragmentHandler, AutoCloseable {
               .endpoint("192.168.0.51:40123")
               .build();
       try (MediaDriver ignore = BasicMediaDriver.start("/dev/shm/aeron");
-           SimpleGateway gw = new SimpleGateway("/dev/shm/aeron", pubUri, args[0], 10)) {
+           SimpleGateway gw = new SimpleGateway("/dev/shm/aeron", pubUri, args[0], Integer.parseInt(args[1]))) {
           logger.info("Starting gateway...");
           gw.start();
           new SigIntBarrier().await();

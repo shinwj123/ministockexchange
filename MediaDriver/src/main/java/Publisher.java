@@ -73,7 +73,6 @@ public class Publisher {
 
     public void stop() {
         running.set(false);
-        CloseHelper.close(aeron);
         publications.forEach((key, pub) -> CloseHelper.close(pub));
     }
 }

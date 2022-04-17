@@ -4,6 +4,7 @@ import io.aeron.driver.MediaDriver;
 import io.aeron.logbuffer.FragmentHandler;
 import io.aeron.logbuffer.Header;
 import org.agrona.BufferUtil;
+import org.agrona.CloseHelper;
 import org.agrona.DirectBuffer;
 import org.agrona.collections.Int2ObjectHashMap;
 import org.agrona.concurrent.SigInt;
@@ -82,6 +83,7 @@ public final class MatchingEngine implements FragmentHandler, AutoCloseable {
         running.set(false);
         gatewayPublisher.stop();
         gatewaySubscriber.stop();
+        CloseHelper.close(aeron);
     }
 
     public static void main(String[] args) {

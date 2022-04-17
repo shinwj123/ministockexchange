@@ -28,8 +28,7 @@ public class Subscriber {
         this.fragmentLimitCount = fragmentLimitCount;
         this.subscriptions = new Object2ObjectHashMap<>();
         this.aeron = aeron;
-        idleStrategy = new BackoffIdleStrategy(
-                100, 10, TimeUnit.MICROSECONDS.toNanos(1), TimeUnit.MICROSECONDS.toNanos(100));
+        idleStrategy = new BusySpinIdleStrategy();
     }
 
     public Subscriber(Aeron aeron, FragmentHandler fragmentHandler) {
@@ -37,8 +36,7 @@ public class Subscriber {
         this.fragmentLimitCount = 1;
         this.subscriptions = new Object2ObjectHashMap<>();
         this.aeron = aeron;
-        idleStrategy = new BackoffIdleStrategy(
-                100, 10, TimeUnit.MICROSECONDS.toNanos(1), TimeUnit.MICROSECONDS.toNanos(100));
+        idleStrategy = new BusySpinIdleStrategy();
     }
 
     public void addSubscription(String channel,int streamId){
@@ -47,20 +45,20 @@ public class Subscriber {
     }
 
     public void start() {
-        int fragmentsRead;
         final FragmentAssembler assembler = new FragmentAssembler(fragmentHandler);
-        while (running.get()) {
-            fragmentsRead = 0;
-            for (Subscription sub : subscriptions.values()) {
-                fragmentsRead += sub.poll(assembler, fragmentLimitCount);
-            }
-            idleStrategy.idle(fragmentsRead);
+        for (Subscription sub : subscriptions.values()) {
+            new Thread(() -> {
+                while (running.get()) {
+                    final int fragmentsRead = sub.poll(assembler, fragmentLimitCount);
+                    idleStrategy.idle(fragmentsRead);
+                }
+            }).start();
         }
+
     }
 
     public void stop() {
         running.set(false);
-        CloseHelper.close(aeron);
         subscriptions.forEach((key, sub) -> CloseHelper.close(sub));
     }
 
