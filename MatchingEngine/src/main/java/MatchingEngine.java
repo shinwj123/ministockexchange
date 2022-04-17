@@ -74,7 +74,7 @@ public final class MatchingEngine implements FragmentHandler, AutoCloseable {
     public void start(AtomicBoolean running) {
         gatewaySubscriber.start();
         while (running.get()) {
-            logger.info("ME running...");
+            Thread.yield();
         }
     }
 
