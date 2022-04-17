@@ -61,6 +61,7 @@ public final class SimpleGateway implements FragmentHandler, AutoCloseable {
         final int numBytes = outBuffer.putStringAscii(0, Integer.toUnsignedString(random.nextInt()));
 
         matchingEnginePublisher.sendMessage(outBuffer, gatewayPubUri, 10);
+        matchingEngineSubscriber.start();
     }
 
     @Override
