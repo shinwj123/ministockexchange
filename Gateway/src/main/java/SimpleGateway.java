@@ -74,7 +74,7 @@ public class SimpleGateway implements FragmentHandler {
           final String pubUri = new ChannelUriStringBuilder()
                   .reliable(true)
                   .media("udp")
-                  .endpoint("localhost:40123")
+                  .endpoint("192.168.1.101:40123")
                   .build();
           SimpleGateway gw = new SimpleGateway("/dev/shm/aeron", pubUri, args[0], 10);
           logger.info("Starting gateway...");
