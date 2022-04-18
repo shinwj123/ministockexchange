@@ -44,7 +44,7 @@ public final class SimpleGateway implements FragmentHandler, AutoCloseable {
         matchingEngineSubscriber = new Subscriber(this.aeron, this);
 
         matchingEnginePublisher.addPublication(gatewayPubUri, streamId);
-        matchingEngineSubscriber.addSubscription(matchingEngineSubUri, streamId);
+        matchingEngineSubscriber.addSubscription(matchingEngineSubUri, 10);
     }
 
     @Override

@@ -48,7 +48,9 @@ public final class MatchingEngine implements FragmentHandler, AutoCloseable {
 
         // same multicast address for all matching engines
         gatewayPublisher.addPublication(gatewayUri, streamId);
-        gatewaySubscriber.addSubscription(matchingEngineUri, streamId);
+        // separate streamId for different gateways
+        gatewaySubscriber.addSubscription(matchingEngineUri, 10);
+        gatewaySubscriber.addSubscription(matchingEngineUri, 11);
     }
 
     @Override
@@ -77,7 +79,6 @@ public final class MatchingEngine implements FragmentHandler, AutoCloseable {
         while (running.get()) {
             Thread.yield();
         }
-
     }
 
     @Override

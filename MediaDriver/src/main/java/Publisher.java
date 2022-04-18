@@ -63,12 +63,12 @@ public class Publisher {
                     logger.debug("No active subscribers detected");
                 }
 
-//                try {
-//                    Thread.sleep(TimeUnit.SECONDS.toMillis(1));
-//                } catch (InterruptedException e) {
-//                    e.printStackTrace();
-//                }
-                idleStrategy.idle();
+                try {
+                    Thread.sleep(TimeUnit.SECONDS.toMillis(1));
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
+//                idleStrategy.idle();
             }
         }
         return false;
