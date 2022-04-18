@@ -19,6 +19,20 @@ Vagrant.configure("2") do |config|
     config.vm.box_download_checksum_type = "sha256"
     config.ssh.insert_key = false
 
+    (1..2).each do |i|
+            config.vm.define "client#{i}" do |client|
+                client.vm.hostname = "client#{i}"
+
+                client.vm.provider :virtualbox do |vb|
+                    vb.customize ["modifyvm", :id, "--memory", "1024"]
+                    vb.customize ["modifyvm", :id, "--cpus", "2"]
+                end
+
+                client.vm.network "private_network", ip: "192.168.0.2#{i}", virtualbox__intnet: "exchange_network", nic_type: "virtio"
+                client.vm.provision "shell", path: "scripts/install.sh"
+            end
+        end
+
     (1..3).each do |i|
         config.vm.define "matching-engine#{i}" do |me|
             me.vm.hostname = "matching-engine#{i}"
@@ -48,6 +62,18 @@ Vagrant.configure("2") do |config|
             gateway.vm.provision "shell", path: "scripts/install.sh"
             gateway.vm.provision "shell", path: "scripts/gateway_setup.sh"
         end
+    end
+
+    config.vm.define "tickerplant" do |tp|
+        tp.vm.hostname = "tickerplant"
+
+        tp.vm.provider :virtualbox do |vb|
+            vb.customize ["modifyvm", :id, "--memory", "1024"]
+            vb.customize ["modifyvm", :id, "--cpus", "2"]
+        end
+
+        tp.vm.network "private_network", ip: "192.168.0.201", virtualbox__intnet: "exchange_network", nic_type: "virtio"
+        tp.vm.provision "shell", path: "scripts/install.sh"
     end
 
 end

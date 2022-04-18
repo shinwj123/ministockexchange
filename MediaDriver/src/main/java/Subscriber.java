@@ -46,15 +46,27 @@ public class Subscriber {
 
     public void start() {
         final FragmentAssembler assembler = new FragmentAssembler(fragmentHandler);
+        Thread[] threads = new Thread[subscriptions.size()];
+        int i = 0;
         for (Subscription sub : subscriptions.values()) {
-            new Thread(() -> {
+            Thread t = new Thread(() -> {
                 while (running.get()) {
                     final int fragmentsRead = sub.poll(assembler, fragmentLimitCount);
                     idleStrategy.idle(fragmentsRead);
                 }
-            }).start();
+            });
+            threads[i] = t;
+            t.start();
+            i++;
         }
 
+        for (Thread thread : threads) {
+            try {
+                thread.join();
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+        }
     }
 
     public void stop() {

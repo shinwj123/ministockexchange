@@ -7,6 +7,7 @@ import org.agrona.collections.Object2ObjectHashMap;
 import org.agrona.concurrent.BusySpinIdleStrategy;
 import org.agrona.concurrent.IdleStrategy;
 import org.agrona.concurrent.UnsafeBuffer;
+import org.agrona.concurrent.YieldingIdleStrategy;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -23,7 +24,7 @@ public class Publisher {
     public Publisher(Aeron aeron) {
         this.aeron = aeron;
         this.publications = new Object2ObjectHashMap<>();
-        idleStrategy = new BusySpinIdleStrategy();
+        idleStrategy = new YieldingIdleStrategy();
     }
 
     public void addPublication(String channel, int streamId) {
@@ -62,11 +63,12 @@ public class Publisher {
                     logger.debug("No active subscribers detected");
                 }
 
-                try {
-                    Thread.sleep(TimeUnit.SECONDS.toMillis(1));
-                } catch (InterruptedException e) {
-                    e.printStackTrace();
-                }
+//                try {
+//                    Thread.sleep(TimeUnit.SECONDS.toMillis(1));
+//                } catch (InterruptedException e) {
+//                    e.printStackTrace();
+//                }
+                idleStrategy.idle();
             }
         }
         return false;
