@@ -5,13 +5,13 @@ import java.util.Objects;
 public class PriceLevel {
     private final String stockSymbol;
     private final long timeStamp;
-    private final long stockPrice;
-    private final int size;
+    private final StockPrice stockPrice;
+    private int size;
 
     public PriceLevel (
              String stockSymbolInput,
              long timeStampInput,
-             long stockPriceInput,
+             StockPrice stockPriceInput,
              int sizeInput) {
         this.stockSymbol = Objects.requireNonNull(stockSymbolInput, "stockSymbol");
         this.timeStamp = Objects.requireNonNull(timeStampInput, "timeStamp");
@@ -27,12 +27,16 @@ public class PriceLevel {
         return this.timeStamp;
     }
 
-    public long getStockPrice() {
+    public StockPrice getStockPrice() {
         return this.stockPrice;
     }
 
     public int getSize() {
         return this.size;
+    }
+
+    public void setSize(int sizeInput) {
+        this.size = sizeInput;
     }
 
     @Override
