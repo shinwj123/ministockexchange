@@ -74,6 +74,10 @@ public final class MatchingEngine implements FragmentHandler, AutoCloseable {
 
     public void start(AtomicBoolean running) {
         gatewaySubscriber.start();
+        while (running.get()) {
+            Thread.yield();
+        }
+
     }
 
     @Override
@@ -84,7 +88,7 @@ public final class MatchingEngine implements FragmentHandler, AutoCloseable {
         CloseHelper.close(aeron);
     }
 
-    public static void main(String[] args) throws InterruptedException {
+    public static void main(String[] args) {
         final AtomicBoolean running = new AtomicBoolean(true);
         SigInt.register(() -> running.set(false));
         final String matchingEngineUri = new ChannelUriStringBuilder()
