@@ -1,11 +1,11 @@
-package TickerPlantCoremain;
+package TickerPlantCore;
 
 
 import java.util.Comparator;
 import java.util.List;
 
-import TickerPlantAPImain.*;
-import TickerPlantBytemain.ByteEncoder;
+import TickerPlantAPI.*;
+import TickerPlantByte.ByteEncoder;
 
 
 

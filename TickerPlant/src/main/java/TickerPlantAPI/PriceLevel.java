@@ -1,4 +1,4 @@
-package TickerPlantAPImain;
+package TickerPlantAPI;
 
 import java.util.Objects;
 

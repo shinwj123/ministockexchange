@@ -1,4 +1,4 @@
-package TickerPlantBytemain;
+package TickerPlantByte;
 
 public class ByteDecoder {
 

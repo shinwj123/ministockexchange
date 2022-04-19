@@ -1,0 +1,33 @@
+services:
+  mediadriver:
+    build:
+      context: .
+      dockerfile: ./MediaDriver/Dockerfile
+    container_name: mediadriver
+    shm_size: '1024m'
+    ipc: shareable
+    network_mode: "host"
+  me1:
+    build:
+      context: .
+      dockerfile: ./MatchingEngine/Dockerfile
+    ipc: service:mediadriver
+    network_mode: "host"
+    depends_on:
+      - mediadriver
+  gateway1:
+    build:
+      context: .
+      dockerfile: ./Gateway/Dockerfile
+    ipc: service:mediadriver
+    network_mode: "host"
+    depends_on:
+      - mediadriver
+  gateway2:
+    build:
+      context: .
+      dockerfile: ./Gateway/Dockerfile
+    ipc: service:mediadriver
+    network_mode: "host"
+    depends_on:
+      - mediadriver

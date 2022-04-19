@@ -1,8 +1,8 @@
-package TickerPlantCoremain;
+package TickerPlantCore;
 
-import TickerPlantAPImain.MessageFromME;
-import TickerPlantAPImain.PriceLevel;
-import TickerPlantAPImain.StockPrice;
+import TickerPlantAPI.MessageFromME;
+import TickerPlantAPI.PriceLevel;
+import TickerPlantAPI.StockPrice;
 
 
 

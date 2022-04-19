@@ -1,8 +1,8 @@
-package TickerPlantAPImain;
+package TickerPlantAPI;
 
 import java.util.Arrays;
 import java.util.Objects;
-import TickerPlantBytemain.ByteDecoder;
+import TickerPlantByte.ByteDecoder;
 
 public class PriceLevelUpdateMessage {
 

@@ -1,4 +1,4 @@
-package TickerPlantBytemain;
+package TickerPlantByte;
 
 import java.nio.charset.StandardCharsets;
 import java.util.Arrays;

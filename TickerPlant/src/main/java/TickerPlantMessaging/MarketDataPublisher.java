@@ -1,4 +1,4 @@
-package TickerPlantMessagingmain;
+package TickerPlantMessaging;
 
 import io.aeron.Aeron;
 import io.aeron.Publication;
