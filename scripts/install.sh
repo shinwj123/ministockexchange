@@ -29,7 +29,7 @@ source /etc/profile.d/maven.sh
 
 echo "Finished installing dependencies"
 
-TOKEN=MYTOKEN
+TOKEN=glpat-kLGxaSvVnxnD9yxtJH1s
 git clone https://oath2:${TOKEN}@gitlab.engr.illinois.edu/ie598_high_frequency_trading_spring_2022/ie498_hft_spring_2022_group_03/group_03_project.git
 cd $PROJECT_ROOT/group_03_project
 git checkout daniel
