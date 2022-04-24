@@ -1,69 +1,116 @@
-import quickfix.*;
-import quickfix.field.*;
-import quickfix.fix44.MessageCracker;
+import java.util.HashMap;
+import java.util.Map;
+
+import quickfix.Application;
+import quickfix.DoNotSend;
+import quickfix.FieldNotFound;
+import quickfix.IncorrectDataFormat;
+import quickfix.IncorrectTagValue;
+import quickfix.Message;
+import quickfix.MessageCracker;
+import quickfix.RejectLogon;
+import quickfix.Session;
+import quickfix.SessionID;
+import quickfix.SessionNotFound;
+import quickfix.UnsupportedMessageType;
+import quickfix.field.AvgPx;
+import quickfix.field.CumQty;
+import quickfix.field.ExecID;
+import quickfix.field.ExecTransType;
+import quickfix.field.ExecType;
+import quickfix.field.LeavesQty;
+import quickfix.field.OrdStatus;
+import quickfix.field.OrdType;
+import quickfix.field.OrderID;
+import quickfix.field.Price;
+import quickfix.field.Side;
+import quickfix.field.Symbol;
+import quickfix.fix44.ExecutionReport;
 import quickfix.fix44.NewOrderSingle;
 
 
 public class Gateway extends MessageCracker implements Application {
 
+    private Map<String, Double> priceMap = null;
+
+    public Gateway() {
+        priceMap = new HashMap<String, Double>();
+        priceMap.put("EUR/USD", 1.234);
+    }
+
     @Override
+    public void onCreate(SessionID sessionId) {
+        System.out.println("Executor Session Created with SessionID = "
+                + sessionId);
+    }
+
+    @Override
+    public void onLogon(SessionID sessionId) {
+        System.out.println("Receiver onLogon.." + sessionId);
+    }
+
+    @Override
+    public void onLogout(SessionID sessionId) {
+        System.out.println("Receiver Logout.." + sessionId);
+    }
+
+    @Override
+    public void toAdmin(Message message, SessionID sessionId) {
+
+    }
+
+    @Override
+    public void fromAdmin(Message message, SessionID sessionId)
+            throws FieldNotFound, IncorrectDataFormat, IncorrectTagValue, RejectLogon {
+
+    }
+
+    @Override
+    public void toApp(Message message, SessionID sessionId) throws DoNotSend {
+
+    }
+
+    @Override
+    public void fromApp(Message message, SessionID sessionId)
+            throws FieldNotFound, IncorrectDataFormat, IncorrectTagValue,
+            UnsupportedMessageType {
+        crack(message, sessionId);
+    }
+
     public void onMessage(NewOrderSingle message, SessionID sessionID)
             throws FieldNotFound, UnsupportedMessageType, IncorrectTagValue {
-        System.out.println("###NewOrderived:" + message.toString());
-        System.out.println("###SymbolOrder" + message.getSymbol().toString());
-        System.out.println("###SideOrder" + message.getSide().toString());
-        System.out.println("###TypeOrder" + message.getOrdType().toString());
-        System.out.println("###TransactioTimeOrder" + message.getTransactTime().toString());
-        sendMessageToClient (message, sessionID);
-    }
+        OrdType orderType = message.getOrdType();
+        Symbol currencyPair = message.getSymbol();
 
-    public void sendMessageToClient(NewOrderSingle message, SessionID sessionID) {
+        Price price = null;
+        if (OrdType.FOREX_MARKET == orderType.getValue()) {
+            if(this.priceMap.containsKey(currencyPair.getValue())){
+                price = new Price(this.priceMap.get(currencyPair.getValue()));
+            } else {
+                price = new Price(1.4589);
+            }
+
+        }
+
+        OrderID orderNumber = new OrderID("1");
+        ExecID execId = new ExecID("1");
+//        ExecTransType exectutionTransactioType = new ExecTransType(ExecTransType.NEW);
+        ExecType purposeOfExecutionReport =new ExecType(ExecType.FILL);
+        OrdStatus orderStatus = new OrdStatus(OrdStatus.FILLED);
+        //Symbol symbol = currencyPair;
+        Side side = message.getSide();
+        LeavesQty leavesQty = new LeavesQty(100);
+        CumQty cummulativeQuantity = new CumQty(100);
+        AvgPx avgPx = new AvgPx(1.235);
+
+        ExecutionReport executionReport = new ExecutionReport(orderNumber,execId,
+                purposeOfExecutionReport, orderStatus, side, leavesQty, cummulativeQuantity, avgPx);
+        executionReport.set(price);
+
         try {
-            OrderQty orderQty = null;
-
-            orderQty = new OrderQty(56.0);
-            quickfix.fix40.ExecutionReport accept = new quickfix.fix40.ExecutionReport(new OrderID("133456"), new ExecID("789"),
-                    new ExecTransType(ExecTransType.NEW), new OrdStatus(OrdStatus.NEW), message.getSymbol(), message.getSide(),
-                    orderQty, new LastShares(0), new LastPx(0), new CumQty(0), new AvgPx(0));
-            accept.set(message.getClOrdID());
-            System.out.println("###Sending Order Acceptance:" + accept.toString() + "sessionID:" + sessionID.toString());
-            Session.sendToTarget(accept, sessionID);
-        } catch (RuntimeException e) {
-            LogUtil.logThrowable(sessionID, e.getMessage(), e);
-        } catch (FieldNotFound fieldNotFound) {
-            fieldNotFound.printStackTrace();
-        } catch (SessionNotFound sessionNotFound) {
-            sessionNotFound.printStackTrace();
+            Session.sendToTarget(executionReport, sessionID);
+        } catch (SessionNotFound e) {
+            e.printStackTrace();
         }
     }
-
-    @Override
-    public void fromAdmin(Message arg0, SessionID arg1) throws FieldNotFound, IncorrectDataFormat,
-            IncorrectTagValue, RejectLogon {
-    }
-
-    @Override
-    public void fromApp(Message arg0, SessionID arg1) throws FieldNotFound, IncorrectDataFormat,
-            IncorrectTagValue, UnsupportedMessageType {
-        System.out.println("Receiver fromApp..  " + arg0);
-    }
-
-    @Override
-    public void onCreate(SessionID arg0) {
-        System.out.println("Receiver onCreate.. " + arg0);
-    }
-
-    @Override
-    public void onLogon(SessionID arg0) {
-        System.out.println("Receiver onLogon.." + arg0);
-    }
-
-    @Override
-    public void onLogout(SessionID arg0) {}
-
-    @Override
-    public void toAdmin(Message arg0, SessionID arg1) {}
-
-    @Override
-    public void toApp(Message arg0, SessionID arg1) throws DoNotSend {}
 }
