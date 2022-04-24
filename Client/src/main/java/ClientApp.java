@@ -16,7 +16,7 @@ import quickfix.field.OrderQty;
 import quickfix.field.Side;
 import quickfix.field.Symbol;
 import quickfix.field.TransactTime;
-import quickfix.fix44.NewOrderSingle;
+import quickfix.fix42.NewOrderSingle;
 
 import java.io.IOException;
 import java.util.Scanner;
@@ -59,12 +59,14 @@ public class ClientApp {
 
     private static void bookSingleOrder(SessionID sessionID){
         ClOrdID orderId = new ClOrdID("1");
-        //HandlInst instruction = new HandlInst('1');
+        HandlInst instruction = new HandlInst('1');
+        Symbol mainCurrency = new Symbol("EUR/USD");
         Side side = new Side(Side.BUY);
         TransactTime transactionTime = new TransactTime();
         OrdType orderType = new OrdType(OrdType.FOREX_MARKET);
 
-        quickfix.fix44.NewOrderSingle newOrderSingle = new NewOrderSingle(orderId, side, transactionTime,orderType);
+        NewOrderSingle newOrderSingle = new NewOrderSingle(orderId, instruction, mainCurrency,
+                side, transactionTime,orderType);
 
         newOrderSingle.set(new OrderQty(100));
         try {

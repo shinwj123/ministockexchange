@@ -7,8 +7,8 @@ import quickfix.Message;
 import quickfix.RejectLogon;
 import quickfix.SessionID;
 import quickfix.UnsupportedMessageType;
-import quickfix.fix44.ExecutionReport;
-import quickfix.fix44.MessageCracker;
+import quickfix.fix42.ExecutionReport;
+import quickfix.fix42.MessageCracker;
 
 public class Client extends MessageCracker implements Application {
 

@@ -25,8 +25,8 @@ import quickfix.field.OrderID;
 import quickfix.field.Price;
 import quickfix.field.Side;
 import quickfix.field.Symbol;
-import quickfix.fix44.ExecutionReport;
-import quickfix.fix44.NewOrderSingle;
+import quickfix.fix42.ExecutionReport;
+import quickfix.fix42.NewOrderSingle;
 
 
 public class Gateway extends MessageCracker implements Application {
@@ -94,17 +94,17 @@ public class Gateway extends MessageCracker implements Application {
 
         OrderID orderNumber = new OrderID("1");
         ExecID execId = new ExecID("1");
-//        ExecTransType exectutionTransactioType = new ExecTransType(ExecTransType.NEW);
+        ExecTransType exectutionTransactionType = new ExecTransType(ExecTransType.NEW);
         ExecType purposeOfExecutionReport =new ExecType(ExecType.FILL);
         OrdStatus orderStatus = new OrdStatus(OrdStatus.FILLED);
-        //Symbol symbol = currencyPair;
+        Symbol symbol = currencyPair;
         Side side = message.getSide();
         LeavesQty leavesQty = new LeavesQty(100);
         CumQty cummulativeQuantity = new CumQty(100);
         AvgPx avgPx = new AvgPx(1.235);
 
-        ExecutionReport executionReport = new ExecutionReport(orderNumber,execId,
-                purposeOfExecutionReport, orderStatus, side, leavesQty, cummulativeQuantity, avgPx);
+        ExecutionReport executionReport = new ExecutionReport(orderNumber,execId, exectutionTransactionType,
+                purposeOfExecutionReport, orderStatus, symbol, side, leavesQty, cummulativeQuantity, avgPx);
         executionReport.set(price);
 
         try {
