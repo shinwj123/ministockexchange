@@ -35,15 +35,10 @@ public class ClientApp {
         SocketInitiator socketInitiator = new SocketInitiator(clientApplication, fileStoreFactory, settings,
                 fileLogFactory, msgFactory);
 
-        System.out.print("penis");
-
         socketInitiator.start();
-
-        System.out.print("hehe");
 
         SessionID sessionId = socketInitiator.getSessions().get(0);
 
-        System.out.print("dick");
         Session.lookupSession(sessionId).logon();
         while(!Session.lookupSession(sessionId).isLoggedOn()){
             System.out.println("Waiting for login success");
