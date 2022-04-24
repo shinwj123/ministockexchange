@@ -1,5 +1,6 @@
 package TickerPlantAPI;
 
+import java.math.BigDecimal;
 import java.util.Arrays;
 import java.util.Objects;
 import TickerPlantByte.ByteDecoder;
@@ -13,16 +14,17 @@ public class PriceLevelUpdateMessage {
 
     public static final int LENGTH = 30;
 
+    private final String messageType;
     private final String eventFlag; // means the order in the message is still processed, true means order processing completed
     private final long timeStamp;
     private final String symbol;
     private final int size;
     private final long stockPrice;
-    private final String messageType; //if 0, sell, if 1, buy
 
 
 
-    private PriceLevelUpdateMessage(
+
+    public PriceLevelUpdateMessage(
             byte[] byteMessage) {
         byte typeByte = byteMessage[0];
         if (typeByte == (byte) 0x38) {
@@ -77,29 +79,32 @@ public class PriceLevelUpdateMessage {
     public boolean equals(final Object o) {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
-        if (!super.equals(o)) return false;
+        //if (!super.equals(o)) return false;
         final PriceLevelUpdateMessage that = (PriceLevelUpdateMessage) o;
-        return timeStamp == that.timeStamp &&
-                size == that.size &&
-                eventFlag == that.eventFlag &&
+        return  Objects.equals(messageType, that.messageType) &&
+                Objects.equals(eventFlag, that.eventFlag) &&
+                timeStamp == that.timeStamp &&
                 Objects.equals(symbol, that.symbol) &&
+                size == that.size &&
                 stockPrice == that.stockPrice;
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(super.hashCode(), eventFlag, timeStamp, symbol, size, stockPrice);
+        return Objects.hash(super.hashCode(), eventFlag, timeStamp, symbol, size, stockPrice, messageType);
     }
 
     @Override
     public String toString() {
 
         return "PriceLevelUpdateMessage{" +
-                "eventFlag=" + eventFlag +
+                "messageType=" + messageType +
+                ", eventFlag=" + eventFlag +
                 ", timestamp=" + timeStamp +
                 ", symbol='" + symbol + '\'' +
                 ", size=" + size +
-                ", price=" + stockPrice +
+                ", price=" + BigDecimal.valueOf(stockPrice)
+                .scaleByPowerOfTen(-4).toString() +
                 "} " + super.toString();
     }
 

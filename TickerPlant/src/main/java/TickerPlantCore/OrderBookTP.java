@@ -25,7 +25,7 @@ public class OrderBookTP implements OrderBook {
         this.askSide = new BookSide(Comparator.naturalOrder());
     }
 
-    public void priceLevelUpdate(final MessageFromME messageFromME) {
+    /*public void priceLevelUpdate(final MessageFromME messageFromME) {
         byte eventProcessing = (byte) 0x0;
         byte eventComplete = (byte) 0x1;
         byte buyUpdateTag = (byte) 0x38;
@@ -42,17 +42,17 @@ public class OrderBookTP implements OrderBook {
                 preProcessingLevel = temp;
             }
             byte[] preProcessingMessage = IEXPriceLevelUpdateMessage(
-                    eventProcessing,
+                    true,
                     preProcessingLevel,
-                    sellUpdateTag
+                    true
             );
 
             // find some way to send the message using MarketDataPublisher
             PriceLevel postProcessingLevel = askSide.priceLevelUpdateFromMessage(messageFromME);
             byte[] postProcessingMessage = IEXPriceLevelUpdateMessage(
-                    eventComplete,
+                    true,
                     postProcessingLevel,
-                    sellUpdateTag
+                    false
             );
 
         } else if (messageFromME.getSide() == 1) {
@@ -64,29 +64,70 @@ public class OrderBookTP implements OrderBook {
                 preProcessingLevel = temp;
             }
             byte[] preProcessingMessage = IEXPriceLevelUpdateMessage(
-                    eventProcessing,
+                    false,
                     preProcessingLevel,
-                    buyUpdateTag
+                    true
             );
             PriceLevel postProcessingLevel = bidSide.priceLevelUpdateFromMessage(messageFromME);
 
             byte[] postProcessingMessage = IEXPriceLevelUpdateMessage(
-                    eventComplete,
+                    false,
                     postProcessingLevel,
-                    buyUpdateTag
+                    false
             );
+
+        } else {
+            throw new IllegalArgumentException("Unknown Price Level Update side. Cannot proceed.");
+        }
+    }*/
+
+
+
+    public void priceLevelUpdate(final MessageFromME messageFromME) {
+        //based on the message, if it is sell, put into the ask side
+        //if it is buying, put into the bidside
+        // else, through illigal arg exception since messagetype is unknown...
+        if (messageFromME.getSide() == 0) {
+            // find some way to send the message using MarketDataPublisher
+            askSide.priceLevelUpdateFromMessage(messageFromME);
+
+
+        } else if (messageFromME.getSide() == 1) {
+            bidSide.priceLevelUpdateFromMessage(messageFromME);
 
         } else {
             throw new IllegalArgumentException("Unknown Price Level Update side. Cannot proceed.");
         }
     }
 
-    public static byte[] IEXPriceLevelUpdateMessage(byte eventFlag,
+
+
+
+    public static byte[] IEXPriceLevelUpdateMessage(boolean buySide,
                                                     PriceLevel priceLevel,
-                                                    byte messageType) {
+                                                    boolean Processing) {
+        byte buyUpdateTag = (byte) 0x38;
+        byte sellUpdateTag = (byte) 0x35;
+        byte eventProcessing = (byte) 0x0;
+        byte eventComplete = (byte) 0x1;
+
+        byte eventFlag = buyUpdateTag;
+
+        if (buySide) {
+            eventFlag= buyUpdateTag;
+        } else {
+            eventFlag = sellUpdateTag;
+        }
+        byte messageType = eventProcessing;
+        if (Processing) {
+            messageType = eventProcessing;
+        } else {
+            messageType = eventComplete;
+        }
         byte[] toReturn = new byte[30];
-        toReturn[0] = messageType;
-        toReturn[1] = eventFlag;
+        toReturn[0] = eventFlag;
+        toReturn[1] = messageType;
+
         byte[] timeStampByte = ByteEncoder.longToByteArray(priceLevel.getTimeStamp());
         System.arraycopy(timeStampByte, 0, toReturn, 2, 8);
         byte[] symbolByte = ByteEncoder.stringToByteArray(priceLevel.getStockSymbol(), 8);

@@ -12,7 +12,7 @@ public class MessageFromME {
     private final long price;
     private final int side; //if 0, sell, if 1, buy
 
-    private MessageFromME(
+    public MessageFromME(
             final long orderIdInput,
             final int orderStatusInput,
             final long timestampInput,

@@ -3,11 +3,14 @@ package TickerPlantAPI;
 
 import java.util.Objects;
 
+import java.math.BigDecimal;
+
 import static java.lang.Long.compare;
 
 public class StockPrice implements Comparable<StockPrice>{
 
     private final long number;
+    private static final int SCALE = 4;
 
     public StockPrice(final long number) {
         this.number = number;
@@ -32,6 +35,11 @@ public class StockPrice implements Comparable<StockPrice>{
         return number == stockPrice.number;
     }
 
+    public BigDecimal toBigDecimal() {
+        return BigDecimal.valueOf(number)
+                .scaleByPowerOfTen(-SCALE);
+    }
+
     @Override
     public int hashCode() {
         return Objects.hashCode(number);
@@ -39,6 +47,6 @@ public class StockPrice implements Comparable<StockPrice>{
 
     @Override
     public String toString() {
-        return this.toString();
+        return toBigDecimal().toString();
     }
 }
