@@ -67,7 +67,7 @@ public class Gateway extends MessageCracker implements Application {
 
     @Override
     public void toApp(Message message, SessionID sessionId) throws DoNotSend {
-        System.out.println("Gateway toApp: " + message.toString());
+        System.out.println("Gateway Order Reception : " + message.toString());
     }
 
     @Override

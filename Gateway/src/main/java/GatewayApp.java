@@ -17,11 +17,9 @@ public class GatewayApp {
 
         socketAcceptor.start();
 
-        Scanner reader = new Scanner(System.in);
+        Scanner scanner = new Scanner(System.in);
         System.out.println("press <enter> to quit");
-
-        //get user input for a
-        reader.nextLine();
+        scanner.nextLine();
 
         socketAcceptor.stop();
     }

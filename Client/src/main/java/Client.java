@@ -13,33 +13,41 @@ import quickfix.fix42.MessageCracker;
 public class Client extends MessageCracker implements Application {
 
     @Override
-    public void fromAdmin(Message arg0, SessionID arg1) throws FieldNotFound, IncorrectDataFormat,
+    public void fromAdmin(Message message, SessionID sessionId) throws FieldNotFound, IncorrectDataFormat,
             IncorrectTagValue, RejectLogon {
     }
 
     @Override
-    public void fromApp(Message arg0, SessionID arg1) throws FieldNotFound, IncorrectDataFormat,
-            IncorrectTagValue, UnsupportedMessageType { }
-
-    @Override
-    public void onCreate(SessionID arg0) {}
-
-    @Override
-    public void onLogon(SessionID arg0) {}
-
-    @Override
-    public void onLogout(SessionID arg0) {}
-
-    @Override
-    public void toAdmin(Message arg0, SessionID arg1) {}
-
-    @Override
-    public void toApp(Message msg, SessionID sessionId) throws DoNotSend {
-        System.out.println("Sender toApp: " + msg.toString());
+    public void fromApp(Message message, SessionID sessionId) throws FieldNotFound, IncorrectDataFormat,
+            IncorrectTagValue, UnsupportedMessageType {
+        crack(message, sessionId);
     }
 
     @Override
-    public void onMessage(ExecutionReport message, SessionID sessionID)
+    public void onCreate(SessionID sessionId) {
+        System.out.println("Client Session Created with SessionID = " + sessionId);
+    }
+
+    @Override
+    public void onLogon(SessionID sessionId) {
+        System.out.println("Client onLogon.." + sessionId);
+    }
+
+    @Override
+    public void onLogout(SessionID sessionId) {
+        System.out.println("Client onLogout.." + sessionId);
+    }
+
+    @Override
+    public void toAdmin(Message message, SessionID sessionId) {}
+
+    @Override
+    public void toApp(Message message, SessionID sessionId) throws DoNotSend {
+        System.out.println("Client Order Sent: " + message.toString());
+    }
+
+    @Override
+    public void onMessage(ExecutionReport message, SessionID sessionId)
             throws FieldNotFound, UnsupportedMessageType, IncorrectTagValue {
         System.out.println("Received Execution report from server");
         System.out.println("Order Id : " + message.getOrderID().getValue());

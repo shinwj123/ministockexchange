@@ -50,9 +50,10 @@ public class ClientApp {
         Thread.sleep(5000);
         bookSingleOrder(sessionId);
 
-        System.out.println("Type to quit");
         Scanner scanner = new Scanner(System.in);
-        scanner.next();
+        System.out.println("press <enter> to quit");
+        scanner.nextLine();
+
         Session.lookupSession(sessionId).disconnect("Done",false);
         socketInitiator.stop();
     }
