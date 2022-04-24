@@ -25,7 +25,7 @@ public class ClientApp {
 
     public static void main(String[] args) throws ConfigError, InterruptedException, IOException {
 
-        SessionSettings settings = new SessionSettings("Gateway/conf/client.cfg");
+        SessionSettings settings = new SessionSettings("Client/conf/client.cfg");
 
         Application clientApplication = new Client();
         FileStoreFactory fileStoreFactory = new FileStoreFactory(settings);
