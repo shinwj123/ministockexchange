@@ -40,18 +40,18 @@ public class Gateway extends MessageCracker implements Application {
 
     @Override
     public void onCreate(SessionID sessionId) {
-        System.out.println("Executor Session Created with SessionID = "
+        System.out.println("Gateway Session Created with SessionID = "
                 + sessionId);
     }
 
     @Override
     public void onLogon(SessionID sessionId) {
-        System.out.println("Receiver onLogon.." + sessionId);
+        System.out.println("Gateway onLogon.." + sessionId);
     }
 
     @Override
     public void onLogout(SessionID sessionId) {
-        System.out.println("Receiver Logout.." + sessionId);
+        System.out.println("Gateway Logout.." + sessionId);
     }
 
     @Override
@@ -67,7 +67,7 @@ public class Gateway extends MessageCracker implements Application {
 
     @Override
     public void toApp(Message message, SessionID sessionId) throws DoNotSend {
-
+        System.out.println("Gateway toApp: " + message.toString());
     }
 
     @Override
@@ -94,7 +94,7 @@ public class Gateway extends MessageCracker implements Application {
 
         OrderID orderNumber = new OrderID("1");
         ExecID execId = new ExecID("1");
-        ExecTransType exectutionTransactionType = new ExecTransType(ExecTransType.NEW);
+        ExecTransType exectutionTransactioType = new ExecTransType(ExecTransType.NEW);
         ExecType purposeOfExecutionReport =new ExecType(ExecType.FILL);
         OrdStatus orderStatus = new OrdStatus(OrdStatus.FILLED);
         Symbol symbol = currencyPair;
@@ -103,7 +103,7 @@ public class Gateway extends MessageCracker implements Application {
         CumQty cummulativeQuantity = new CumQty(100);
         AvgPx avgPx = new AvgPx(1.235);
 
-        ExecutionReport executionReport = new ExecutionReport(orderNumber,execId, exectutionTransactionType,
+        ExecutionReport executionReport = new ExecutionReport(orderNumber,execId, exectutionTransactioType,
                 purposeOfExecutionReport, orderStatus, symbol, side, leavesQty, cummulativeQuantity, avgPx);
         executionReport.set(price);
 
