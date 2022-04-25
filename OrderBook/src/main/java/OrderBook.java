@@ -16,6 +16,8 @@ public class OrderBook {
         this.symbol = symbol;
         this.bids = new TreeMap<>(Collections.reverseOrder());
         this.asks = new TreeMap<>();
+        this.bestAsk = Long.MAX_VALUE;
+        this.bestBid = 0;
         this.id2Order = new Long2ObjectHashMap<>();
         this.price2Level = new Long2ObjectHashMap<>();
     }
@@ -51,6 +53,7 @@ public class OrderBook {
                 level.reduceTotalVolume(fillable);
                 if (candidate.getTotalQuantity() == candidate.getFilledQuantity()) {
                     matchedOrders.add(candidate);
+                    it.remove();
                     removeOrder(candidate.getOrderId());
                 }
             }
@@ -90,11 +93,11 @@ public class OrderBook {
             bookLevel.put(order);
             book.put(limitPrice, bookLevel);
             price2Level.put(limitPrice, bookLevel);
-//            if (order.getSide() == Side.BID && limitPrice > bestBid) {
-//                bestBid = limitPrice;
-//            } else if (order.getSide() == Side.ASK && limitPrice < bestAsk) {
-//                bestAsk = limitPrice;
-//            }
+            if (order.getSide() == Side.BID && limitPrice > bestBid) {
+                bestBid = limitPrice;
+            } else if (order.getSide() == Side.ASK && limitPrice < bestAsk) {
+                bestAsk = limitPrice;
+            }
         }
 
         id2Order.put(orderId, order);
@@ -115,17 +118,34 @@ public class OrderBook {
         if (bookLevel.getNumOrders() == 0) {
             book.remove(limitPrice);
             price2Level.remove(limitPrice);
-//            if (orderToRemove.getSide() == Side.BID && limitPrice == bestBid) {
-//                bestBid = book.firstKey();
-//            } else if (orderToRemove.getSide() == Side.ASK && limitPrice == bestAsk) {
-//                bestAsk = book.firstKey();
-//            }
+            if (orderToRemove.getSide() == Side.BID && limitPrice == bestBid) {
+                bestBid = book.isEmpty() ? 0 : book.firstKey();
+            } else if (orderToRemove.getSide() == Side.ASK && limitPrice == bestAsk) {
+                bestAsk = book.isEmpty() ? 0 : book.firstKey();
+            }
         }
         return true;
     }
 
-    private TreeMap<Long, BookLevel> getBook(Side side) {
+    public TreeMap<Long, BookLevel> getBook(Side side) {
         return side == Side.ASK ? asks : bids;
+    }
+
+    public BookLevel getPriceLevel(long priceLevel, Side side) {
+        return side == Side.BID ? bids.get(priceLevel) : asks.get(priceLevel);
+    }
+
+    public boolean isStateValid() {
+        boolean isLevelValid = asks.values().stream().allMatch(BookLevel::checkLevelTotalVolume)
+                && bids.values().stream().allMatch(BookLevel::checkLevelTotalVolume)
+                && asks.firstKey() == bestAsk
+                && bids.firstKey() == bestBid;
+
+        boolean isMappingSizeValid = asks.size() + bids.size() == price2Level.size()
+                && id2Order.size() == asks.values().stream().mapToInt(BookLevel::getNumOrders).sum()
+                + bids.values().stream().mapToInt(BookLevel::getNumOrders).sum();
+
+        return isLevelValid && isMappingSizeValid;
     }
 
     public void printOrderBook() {
@@ -163,8 +183,7 @@ public class OrderBook {
         orderBook.addOrder(o7);
 
         orderBook.printOrderBook();
-        ArrayList<Order> matched = orderBook.match(new Order(8, orderIdGenerator.incrementAndGet(), Side.ASK, OrderType.LIMIT, 110100, 12));
-        System.out.println(matched);
+        ArrayList<Order> matched = orderBook.match(new Order(8, orderIdGenerator.incrementAndGet(), Side.ASK, OrderType.LIMIT, 110100, 22));
         matched.forEach(System.out::println);
 //    orderBook.removeOrder(o3.getOrderId());
         orderBook.printOrderBook();

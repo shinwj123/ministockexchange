@@ -61,6 +61,11 @@ public class BookLevel implements Comparable<BookLevel> {
         }
     }
 
+    public boolean checkLevelTotalVolume() {
+        long sum = entries.values().stream().mapToLong(o -> o.getTotalQuantity() - o.getFilledQuantity()).sum();
+        return sum == totalVolume;
+    }
+
     public String printPriceLevel() {
         return NumberFormat.getCurrencyInstance().format(BigDecimal.valueOf(priceLevel).scaleByPowerOfTen(-4));
     }
