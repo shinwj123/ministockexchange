@@ -9,17 +9,14 @@ import quickfix.SessionID;
 import quickfix.SessionNotFound;
 import quickfix.SessionSettings;
 import quickfix.SocketInitiator;
-import quickfix.field.ClOrdID;
-import quickfix.field.HandlInst;
-import quickfix.field.OrdType;
-import quickfix.field.OrderQty;
-import quickfix.field.Side;
-import quickfix.field.Symbol;
-import quickfix.field.TransactTime;
+import quickfix.field.*;
 import quickfix.fix42.NewOrderSingle;
 
 import java.io.IOException;
 import java.util.Scanner;
+
+import static quickfix.field.OrdType.LIMIT;
+import static quickfix.field.Side.BUY;
 
 public class ClientApp {
 
@@ -58,21 +55,43 @@ public class ClientApp {
     }
 
     private static void bookSingleOrder(SessionID sessionID){
-        ClOrdID orderId = new ClOrdID("1");
-        HandlInst instruction = new HandlInst('1');
-        Symbol mainCurrency = new Symbol("NVDA");
-        Side side = new Side(Side.BUY);
-        TransactTime transactionTime = new TransactTime();
-        OrdType orderType = new OrdType(OrdType.LIMIT);
+//        ClOrdID orderId = new ClOrdID("1");
+//        HandlInst instruction = new HandlInst('1');
+//        Symbol ordProduct = new Symbol("NVDA");
+//        Side side = new Side(Side.BUY);
+//        TransactTime transactionTime = new TransactTime();
+//        OrdType orderType = new OrdType(OrdType.LIMIT);
+//
+//        NewOrderSingle newOrderSingle = new NewOrderSingle(orderId, instruction, ordProduct,
+//                side, transactionTime,orderType);
+//
+//        OrderQty quantity = new OrderQty(100);
+//        newOrderSingle.set(quantity);
 
-        NewOrderSingle newOrderSingle = new NewOrderSingle(orderId, instruction, mainCurrency,
-                side, transactionTime,orderType);
+        NewOrderSingle newOrderSingle = enterOrder("NVDA", 100, BUY, LIMIT);
 
-        newOrderSingle.set(new OrderQty(100));
         try {
             Session.sendToTarget(newOrderSingle, sessionID);
         } catch (SessionNotFound e) {
             e.printStackTrace();
         }
+    }
+
+    private static NewOrderSingle enterOrder(String ordProduct, int numQuantity, char action, char ordType) {
+        ClOrdID orderId = new ClOrdID("1");
+        HandlInst instruction = new HandlInst('1');
+        Symbol tickerSymbol = new Symbol(ordProduct);
+        Side side = new Side(action);
+        TransactTime transactionTime = new TransactTime();
+        OrdType orderType = new OrdType(ordType);
+
+        OrderQty quantity = new OrderQty(numQuantity);
+
+        NewOrderSingle newOrderSingle;
+        newOrderSingle = new NewOrderSingle(orderId, instruction, tickerSymbol, side, transactionTime,orderType);
+
+        newOrderSingle.set(quantity);
+
+        return newOrderSingle;
     }
 }

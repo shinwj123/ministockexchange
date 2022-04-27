@@ -105,12 +105,14 @@ public class Gateway extends MessageCracker implements Application {
         Side side = message.getSide();
         LeavesQty leavesQty = new LeavesQty(100);
         CumQty cummulativeQuantity = new CumQty(100);
-        AvgPx avgPx = new AvgPx(1.235);
+        AvgPx avgPx = new AvgPx(this.priceMap.get(tickerSymbol.getValue()));
 
         ExecutionReport executionReport = new ExecutionReport(orderNumber,execId, exectutionTransactioType,
                 purposeOfExecutionReport, orderStatus, symbol, side, leavesQty, cummulativeQuantity, avgPx);
         executionReport.set(price);
         executionReport.set(orderType);
+
+        System.out.println(executionReport);
 
         try {
             Session.sendToTarget(executionReport, sessionID);
