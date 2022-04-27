@@ -83,7 +83,7 @@ public class Gateway extends MessageCracker implements Application {
         Symbol currencyPair = message.getSymbol();
 
         Price price = null;
-        if (OrdType.FOREX_MARKET == orderType.getValue()) {
+        if (OrdType.MARKET == orderType.getValue()) {
             if(this.priceMap.containsKey(currencyPair.getValue())){
                 price = new Price(this.priceMap.get(currencyPair.getValue()));
             } else {

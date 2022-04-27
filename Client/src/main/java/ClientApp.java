@@ -47,7 +47,6 @@ public class ClientApp {
 
         System.out.println("Logged In...");
 
-        Thread.sleep(5000);
         bookSingleOrder(sessionId);
 
         Scanner scanner = new Scanner(System.in);
@@ -64,7 +63,7 @@ public class ClientApp {
         Symbol mainCurrency = new Symbol("EUR/USD");
         Side side = new Side(Side.BUY);
         TransactTime transactionTime = new TransactTime();
-        OrdType orderType = new OrdType(OrdType.FOREX_MARKET);
+        OrdType orderType = new OrdType(OrdType.MARKET);
 
         NewOrderSingle newOrderSingle = new NewOrderSingle(orderId, instruction, mainCurrency,
                 side, transactionTime,orderType);
