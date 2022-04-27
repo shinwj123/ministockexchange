@@ -60,10 +60,10 @@ public class ClientApp {
     private static void bookSingleOrder(SessionID sessionID){
         ClOrdID orderId = new ClOrdID("1");
         HandlInst instruction = new HandlInst('1');
-        Symbol mainCurrency = new Symbol("AAPL");
+        Symbol mainCurrency = new Symbol("NVDA");
         Side side = new Side(Side.BUY);
         TransactTime transactionTime = new TransactTime();
-        OrdType orderType = new OrdType(OrdType.MARKET);
+        OrdType orderType = new OrdType(OrdType.LIMIT);
 
         NewOrderSingle newOrderSingle = new NewOrderSingle(orderId, instruction, mainCurrency,
                 side, transactionTime,orderType);

@@ -110,6 +110,7 @@ public class Gateway extends MessageCracker implements Application {
         ExecutionReport executionReport = new ExecutionReport(orderNumber,execId, exectutionTransactioType,
                 purposeOfExecutionReport, orderStatus, symbol, side, leavesQty, cummulativeQuantity, avgPx);
         executionReport.set(price);
+        executionReport.set(orderType);
 
         try {
             Session.sendToTarget(executionReport, sessionID);

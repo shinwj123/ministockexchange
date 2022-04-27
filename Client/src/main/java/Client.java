@@ -51,6 +51,10 @@ public class Client extends MessageCracker implements Application {
             throws FieldNotFound, UnsupportedMessageType, IncorrectTagValue {
         System.out.println("Received Execution report from server");
         System.out.println("Order Id : " + message.getOrderID().getValue());
+        System.out.println("Order Type : " + message.getOrdType().getValue());
+        System.out.println("Order Side : " + message.getSide().getValue());
+        System.out.println("Order Product : " + message.getSymbol().getValue());
+        System.out.println("Order Quantity : " + message.getCumQty().getValue());
         System.out.println("Order Status : " + message.getOrdStatus().getValue());
         System.out.println("Order Price : " + message.getPrice().getValue());
     }
