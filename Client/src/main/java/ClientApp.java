@@ -60,7 +60,7 @@ public class ClientApp {
     private static void bookSingleOrder(SessionID sessionID){
         ClOrdID orderId = new ClOrdID("1");
         HandlInst instruction = new HandlInst('1');
-        Symbol mainCurrency = new Symbol("EUR/USD");
+        Symbol mainCurrency = new Symbol("AAPL");
         Side side = new Side(Side.BUY);
         TransactTime transactionTime = new TransactTime();
         OrdType orderType = new OrdType(OrdType.MARKET);

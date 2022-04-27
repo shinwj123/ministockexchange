@@ -35,7 +35,10 @@ public class Gateway extends MessageCracker implements Application {
 
     public Gateway() {
         priceMap = new HashMap<String, Double>();
-        priceMap.put("EUR/USD", 1.234);
+        priceMap.put("AAPL", 150.0);
+        priceMap.put("NVDA", 200.25);
+        priceMap.put("TSLA", 850.33);
+        priceMap.put("AMZN", 2750.0);
     }
 
     @Override
@@ -80,16 +83,17 @@ public class Gateway extends MessageCracker implements Application {
     public void onMessage(NewOrderSingle message, SessionID sessionID)
             throws FieldNotFound, UnsupportedMessageType, IncorrectTagValue {
         OrdType orderType = message.getOrdType();
-        Symbol currencyPair = message.getSymbol();
+        Symbol tickerSymbol = message.getSymbol();
 
         Price price = null;
         if (OrdType.MARKET == orderType.getValue()) {
-            if(this.priceMap.containsKey(currencyPair.getValue())){
-                price = new Price(this.priceMap.get(currencyPair.getValue()));
-            } else {
-                price = new Price(1.4589);
+            if(this.priceMap.containsKey(tickerSymbol.getValue())){
+                price = new Price(this.priceMap.get(tickerSymbol.getValue()));
             }
-
+        } else if (OrdType.LIMIT == orderType.getValue()) {
+            if(this.priceMap.containsKey(tickerSymbol.getValue())){
+                price = new Price(this.priceMap.get(tickerSymbol.getValue()));
+            }
         }
 
         OrderID orderNumber = new OrderID("1");
@@ -97,7 +101,7 @@ public class Gateway extends MessageCracker implements Application {
         ExecTransType exectutionTransactioType = new ExecTransType(ExecTransType.NEW);
         ExecType purposeOfExecutionReport =new ExecType(ExecType.FILL);
         OrdStatus orderStatus = new OrdStatus(OrdStatus.FILLED);
-        Symbol symbol = currencyPair;
+        Symbol symbol = tickerSymbol;
         Side side = message.getSide();
         LeavesQty leavesQty = new LeavesQty(100);
         CumQty cummulativeQuantity = new CumQty(100);
