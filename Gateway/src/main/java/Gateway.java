@@ -27,6 +27,8 @@ import quickfix.field.Side;
 import quickfix.field.Symbol;
 import quickfix.fix42.ExecutionReport;
 import quickfix.fix42.NewOrderSingle;
+import quickfix.fix42.OrderCancelRequest;
+
 
 
 public class Gateway extends MessageCracker implements Application {
@@ -120,4 +122,10 @@ public class Gateway extends MessageCracker implements Application {
             e.printStackTrace();
         }
     }
+
+    public void onMessage(OrderCancelRequest message, SessionID sessionID)
+            throws FieldNotFound, UnsupportedMessageType, IncorrectTagValue {
+
+    }
+
 }

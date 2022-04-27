@@ -11,12 +11,13 @@ import quickfix.SessionSettings;
 import quickfix.SocketInitiator;
 import quickfix.field.*;
 import quickfix.fix42.NewOrderSingle;
+import quickfix.fix42.OrderCancelRequest;
 
 import java.io.IOException;
 import java.util.Scanner;
 
-import static quickfix.field.OrdType.LIMIT;
-import static quickfix.field.Side.BUY;
+import static quickfix.field.OrdType.*;
+import static quickfix.field.Side.*;
 
 public class ClientApp {
 
@@ -93,5 +94,22 @@ public class ClientApp {
         newOrderSingle.set(quantity);
 
         return newOrderSingle;
+    }
+
+    private static void sendOrderCancelRequest(SessionID sessionID) throws SessionNotFound {
+        OrigClOrdID origClOrdID = new OrigClOrdID("123");
+        ClOrdID clOrdID = new ClOrdID("321");
+        Symbol symbol = new Symbol("NVDA");
+        Side side = new Side(Side.BUY);
+        TransactTime transactionTime = new TransactTime();
+
+        OrderCancelRequest cancelRequest = new OrderCancelRequest(origClOrdID, clOrdID, symbol, side, transactionTime);
+
+        OrderQty quantity = new OrderQty(100);
+        cancelRequest.set(quantity);
+
+        cancelRequest.set(new Text("Cancel My Order!"));
+
+        Session.sendToTarget(cancelRequest, sessionID);
     }
 }
