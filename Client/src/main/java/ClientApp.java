@@ -15,11 +15,15 @@ import quickfix.fix42.OrderCancelRequest;
 
 import java.io.IOException;
 import java.util.Scanner;
+import java.util.concurrent.atomic.AtomicLong;
+
 
 import static quickfix.field.OrdType.*;
 import static quickfix.field.Side.*;
 
 public class ClientApp {
+    private static final AtomicLong clientIdGenerator = new AtomicLong();
+
 
     public static void main(String[] args) throws ConfigError, InterruptedException, IOException {
 
@@ -45,6 +49,8 @@ public class ClientApp {
 
         System.out.println("Logged In...");
 
+
+
         bookSingleOrder(sessionId);
 
         Scanner scanner = new Scanner(System.in);
@@ -69,7 +75,10 @@ public class ClientApp {
 //        OrderQty quantity = new OrderQty(100);
 //        newOrderSingle.set(quantity);
 
-        NewOrderSingle newOrderSingle = enterOrder("NVDA", 100, BUY, LIMIT);
+        String idNumber = Long.toString(clientIdGenerator.incrementAndGet());
+        ClOrdID orderId = new ClOrdID(idNumber);
+
+        NewOrderSingle newOrderSingle = enterOrder(orderId,"NVDA", 100, BUY, LIMIT);
 
         try {
             Session.sendToTarget(newOrderSingle, sessionID);
@@ -78,8 +87,7 @@ public class ClientApp {
         }
     }
 
-    private static NewOrderSingle enterOrder(String ordProduct, int numQuantity, char action, char ordType) {
-        ClOrdID orderId = new ClOrdID("1");
+    private static NewOrderSingle enterOrder(ClOrdID orderId, String ordProduct, int numQuantity, char action, char ordType) {
         HandlInst instruction = new HandlInst('1');
         Symbol tickerSymbol = new Symbol(ordProduct);
         Side side = new Side(action);

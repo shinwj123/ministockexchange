@@ -13,18 +13,7 @@ import quickfix.Session;
 import quickfix.SessionID;
 import quickfix.SessionNotFound;
 import quickfix.UnsupportedMessageType;
-import quickfix.field.AvgPx;
-import quickfix.field.CumQty;
-import quickfix.field.ExecID;
-import quickfix.field.ExecTransType;
-import quickfix.field.ExecType;
-import quickfix.field.LeavesQty;
-import quickfix.field.OrdStatus;
-import quickfix.field.OrdType;
-import quickfix.field.OrderID;
-import quickfix.field.Price;
-import quickfix.field.Side;
-import quickfix.field.Symbol;
+import quickfix.field.*;
 import quickfix.fix42.ExecutionReport;
 import quickfix.fix42.NewOrderSingle;
 import quickfix.fix42.OrderCancelRequest;
@@ -34,6 +23,7 @@ import quickfix.fix42.OrderCancelRequest;
 public class Gateway extends MessageCracker implements Application {
 
     private Map<String, Double> priceMap = null;
+
 
     public Gateway() {
         priceMap = new HashMap<String, Double>();
@@ -84,8 +74,12 @@ public class Gateway extends MessageCracker implements Application {
 
     public void onMessage(NewOrderSingle message, SessionID sessionID)
             throws FieldNotFound, UnsupportedMessageType, IncorrectTagValue {
+        String clOrdID = message.getClOrdID().toString();
+        OrderID orderNumber = new OrderID(clOrdID);
+
         OrdType orderType = message.getOrdType();
         Symbol tickerSymbol = message.getSymbol();
+
 
         Price price = null;
         if (OrdType.MARKET == orderType.getValue()) {
@@ -98,11 +92,11 @@ public class Gateway extends MessageCracker implements Application {
             }
         }
 
-        OrderID orderNumber = new OrderID("1");
+//        OrderID orderNumber = new OrderID("1");
         ExecID execId = new ExecID("1");
         ExecTransType exectutionTransactioType = new ExecTransType(ExecTransType.NEW);
         ExecType purposeOfExecutionReport =new ExecType(ExecType.FILL);
-        OrdStatus orderStatus = new OrdStatus(OrdStatus.FILLED);
+        OrdStatus orderStatus = new OrdStatus(OrdStatus.NEW);
         Symbol symbol = tickerSymbol;
         Side side = message.getSide();
         LeavesQty leavesQty = new LeavesQty(100);
