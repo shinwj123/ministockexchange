@@ -92,7 +92,6 @@ public class Gateway extends MessageCracker implements Application {
             }
         }
 
-//        OrderID orderNumber = new OrderID("1");
         ExecID execId = new ExecID("1");
         ExecTransType exectutionTransactioType = new ExecTransType(ExecTransType.NEW);
         ExecType purposeOfExecutionReport =new ExecType(ExecType.FILL);
@@ -117,9 +116,43 @@ public class Gateway extends MessageCracker implements Application {
         }
     }
 
-    public void onMessage(OrderCancelRequest message, SessionID sessionID)
+    public void onMessage(OrderCancelRequest cancelRequest, SessionID sessionID)
             throws FieldNotFound, UnsupportedMessageType, IncorrectTagValue {
 
+        String clOrdID = cancelRequest.getClOrdID().toString();
+        OrderID orderNumber = new OrderID(clOrdID);
+
+        Symbol tickerSymbol = cancelRequest.getSymbol();
+
+
+        Price price = null;
+        if(this.priceMap.containsKey(tickerSymbol.getValue())) {
+            price = new Price(this.priceMap.get(tickerSymbol.getValue()));
+        }
+
+        ExecID execId = new ExecID("2");
+        ExecTransType exectutionTransactioType = new ExecTransType(ExecTransType.CANCEL);
+        ExecType purposeOfExecutionReport =new ExecType(ExecType.CANCELED);
+        OrdStatus orderStatus = new OrdStatus(OrdStatus.CANCELED);
+        Symbol symbol = tickerSymbol;
+        Side side = cancelRequest.getSide();
+        LeavesQty leavesQty = new LeavesQty(0);
+        CumQty cummulativeQuantity = new CumQty(0);
+        AvgPx avgPx = new AvgPx(this.priceMap.get(tickerSymbol.getValue()));
+
+        ExecutionReport executionReport = new ExecutionReport(orderNumber,execId, exectutionTransactioType,
+                purposeOfExecutionReport, orderStatus, symbol, side, leavesQty, cummulativeQuantity, avgPx);
+
+        executionReport.set(price);
+//        executionReport.set(orderType);
+
+        System.out.println(executionReport);
+
+        try {
+            Session.sendToTarget(executionReport, sessionID);
+        } catch (SessionNotFound e) {
+            e.printStackTrace();
+        }
     }
 
 }

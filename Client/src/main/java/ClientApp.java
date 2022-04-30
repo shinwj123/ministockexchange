@@ -25,7 +25,7 @@ public class ClientApp {
     private static final AtomicLong clientIdGenerator = new AtomicLong();
 
 
-    public static void main(String[] args) throws ConfigError, InterruptedException, IOException {
+    public static void main(String[] args) throws ConfigError, InterruptedException, IOException, SessionNotFound  {
 
         SessionSettings settings = new SessionSettings("Client/conf/client.cfg");
 
@@ -42,16 +42,24 @@ public class ClientApp {
         SessionID sessionId = socketInitiator.getSessions().get(0);
 
         Session.lookupSession(sessionId).logon();
+
         while(!Session.lookupSession(sessionId).isLoggedOn()){
             System.out.println("Waiting for login success");
-            Thread.sleep(1000);
+            Thread.sleep(2000);
         }
 
         System.out.println("Logged In...");
 
+        String idNumber = Long.toString(clientIdGenerator.incrementAndGet());
+        ClOrdID orderId  = new ClOrdID(idNumber);
+        OrigClOrdID origClOrdID = new OrigClOrdID(idNumber);
 
+        String cancelIdNumber = Long.toString(clientIdGenerator.incrementAndGet());
+        ClOrdID cancelId  = new ClOrdID(cancelIdNumber);
 
-        bookSingleOrder(sessionId);
+        bookSingleOrder(orderId, sessionId);
+
+        sendOrderCancelRequest(origClOrdID, cancelId, sessionId);
 
         Scanner scanner = new Scanner(System.in);
         System.out.println("press <enter> to quit");
@@ -61,7 +69,7 @@ public class ClientApp {
         socketInitiator.stop();
     }
 
-    private static void bookSingleOrder(SessionID sessionID){
+    private static void bookSingleOrder(ClOrdID orderID, SessionID sessionID){
 //        ClOrdID orderId = new ClOrdID("1");
 //        HandlInst instruction = new HandlInst('1');
 //        Symbol ordProduct = new Symbol("NVDA");
@@ -75,10 +83,9 @@ public class ClientApp {
 //        OrderQty quantity = new OrderQty(100);
 //        newOrderSingle.set(quantity);
 
-        String idNumber = Long.toString(clientIdGenerator.incrementAndGet());
-        ClOrdID orderId = new ClOrdID(idNumber);
-
-        NewOrderSingle newOrderSingle = enterOrder(orderId,"NVDA", 100, BUY, LIMIT);
+//        String idNumber = Long.toString(clientIdGenerator.incrementAndGet());
+//        ClOrdID instructionId  = new ClOrdID(idNumber);
+        NewOrderSingle newOrderSingle = enterOrder(orderID,"NVDA", 100, BUY, LIMIT);
 
         try {
             Session.sendToTarget(newOrderSingle, sessionID);
@@ -87,7 +94,7 @@ public class ClientApp {
         }
     }
 
-    private static NewOrderSingle enterOrder(ClOrdID orderId, String ordProduct, int numQuantity, char action, char ordType) {
+    private static NewOrderSingle enterOrder(ClOrdID orderID, String ordProduct, int numQuantity, char action, char ordType) {
         HandlInst instruction = new HandlInst('1');
         Symbol tickerSymbol = new Symbol(ordProduct);
         Side side = new Side(action);
@@ -97,27 +104,57 @@ public class ClientApp {
         OrderQty quantity = new OrderQty(numQuantity);
 
         NewOrderSingle newOrderSingle;
-        newOrderSingle = new NewOrderSingle(orderId, instruction, tickerSymbol, side, transactionTime,orderType);
+        newOrderSingle = new NewOrderSingle(orderID ,
+                                            instruction,
+                                            tickerSymbol,
+                                            side,
+                                            transactionTime,
+                                            orderType);
 
         newOrderSingle.set(quantity);
 
         return newOrderSingle;
     }
 
-    private static void sendOrderCancelRequest(SessionID sessionID) throws SessionNotFound {
-        OrigClOrdID origClOrdID = new OrigClOrdID("123");
-        ClOrdID clOrdID = new ClOrdID("321");
-        Symbol symbol = new Symbol("NVDA");
-        Side side = new Side(Side.BUY);
+    private static void sendOrderCancelRequest(OrigClOrdID origClOrdID, ClOrdID cancelID, SessionID sessionID){
+//        Symbol symbol = new Symbol("NVDA");
+//        Side side = new Side(Side.BUY);
+//        TransactTime transactionTime = new TransactTime();
+//
+//        OrderCancelRequest cancelRequest = new OrderCancelRequest(origClOrdID,
+//                                                                    cancelID,
+//                                                                    symbol,
+//                                                                    side,
+//                                                                transactionTime);
+//
+//        OrderQty quantity = new OrderQty(100);
+//        cancelRequest.set(quantity);
+//
+//        cancelRequest.set(new Text("Cancel My Order!"));
+
+        OrderCancelRequest cancelRequest = enterCancelOrder(origClOrdID, cancelID,"NVDA", BUY);
+
+        try {
+            Session.sendToTarget(cancelRequest, sessionID);
+        } catch (SessionNotFound e) {
+            e.printStackTrace();
+        }
+    }
+
+    private static OrderCancelRequest enterCancelOrder(OrigClOrdID origClOrdID, ClOrdID cancelID, String ordProduct, char action) {
+        Symbol symbol = new Symbol(ordProduct);
+        Side side = new Side(action);
         TransactTime transactionTime = new TransactTime();
 
-        OrderCancelRequest cancelRequest = new OrderCancelRequest(origClOrdID, clOrdID, symbol, side, transactionTime);
-
-        OrderQty quantity = new OrderQty(100);
-        cancelRequest.set(quantity);
+        OrderCancelRequest cancelRequest;
+        cancelRequest = new OrderCancelRequest(origClOrdID,
+                                                cancelID,
+                                                symbol,
+                                                side,
+                                                transactionTime);
 
         cancelRequest.set(new Text("Cancel My Order!"));
 
-        Session.sendToTarget(cancelRequest, sessionID);
+        return cancelRequest;
     }
 }
