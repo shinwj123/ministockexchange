@@ -7,13 +7,13 @@
 /dataSources/
 /dataSources.local.xml
 
-/target/
+/Clinet/target/
 
-Client/log/
-Client/sessioninfo/ICE/
+/Client/log/
+/Client/sessioninfo/ICE/
 
-Gateway/log/
-Gateway/sessioninfo/ICE/
+/Gateway/log/
+/Gateway/sessioninfo/ICE/
 
 
 
