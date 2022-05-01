@@ -1,4 +1,5 @@
 import org.agrona.collections.Long2ObjectHashMap;
+import org.agrona.concurrent.UnsafeBuffer;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicLong;
 
@@ -20,6 +21,10 @@ public class OrderBook {
         this.bestBid = 0;
         this.id2Order = new Long2ObjectHashMap<>();
         this.price2Level = new Long2ObjectHashMap<>();
+    }
+
+    public String getSymbol() {
+        return symbol;
     }
 
     public long getBestBid() {
@@ -49,10 +54,10 @@ public class OrderBook {
                 long fillable = Math.min(candidate.getTotalQuantity() - candidate.getFilledQuantity(), quantityToFill);
                 quantityToFill -= fillable;
                 candidate.fill(fillable);
-                order.fill(fillable);
+                order.fill(fillable, candidate.getPrice());
                 level.reduceTotalVolume(fillable);
+                matchedOrders.add(candidate);
                 if (candidate.getTotalQuantity() == candidate.getFilledQuantity()) {
-                    matchedOrders.add(candidate);
                     it.remove();
                     removeOrder(candidate.getOrderId());
                 }
@@ -65,9 +70,6 @@ public class OrderBook {
         if (quantityToFill > 0) {
             if (order.getType() == OrderType.LIMIT) {
                 addOrder(order);
-            } else if (order.getType() == OrderType.MARKET) {
-                // cancel the rest
-
             }
         }
         return matchedOrders;
@@ -183,12 +185,23 @@ public class OrderBook {
         orderBook.addOrder(o7);
 
         orderBook.printOrderBook();
-        ArrayList<Order> matched = orderBook.match(new Order(8, orderIdGenerator.incrementAndGet(), Side.ASK, OrderType.LIMIT, 110100, 22));
-        matched.forEach(System.out::println);
+//        ArrayList<Order> matched = orderBook.match(new Order(8, orderIdGenerator.incrementAndGet(), Side.ASK, OrderType.LIMIT, 110100, 22));
+        Order incoming = new Order(8, orderIdGenerator.incrementAndGet(), Side.ASK, OrderType.LIMIT, 130200, 10);
+        ArrayList<Order> matched = orderBook.match(incoming);
+        System.out.println(matched.size());
+        System.out.println(incoming.getStatus());
+
+//        matched.forEach(System.out::println);
 //    orderBook.removeOrder(o3.getOrderId());
         orderBook.printOrderBook();
 //
 //    orderBook.removeOrder(o7.getOrderId());
 //    orderBook.printOrderBook();
+//        Report report = new Report();
+//        UnsafeBuffer buffer = report.orderId(1234).clientOrderId(5678).symbol("NVDA").totalQuantity(20).side(Side.BID).buildReport();
+//        System.out.println(Report.getClientOrderId(buffer));
+//        System.out.println(Report.getOrderId(buffer));
+//        System.out.println(Report.getSymbol(buffer));
+//        System.out.println((char)Report.getSide(buffer));
     }
 }

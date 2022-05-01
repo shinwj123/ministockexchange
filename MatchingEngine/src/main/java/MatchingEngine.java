@@ -9,6 +9,7 @@ import org.agrona.DirectBuffer;
 import org.agrona.collections.Int2ObjectHashMap;
 import org.agrona.collections.Object2ObjectHashMap;
 import org.agrona.concurrent.SigInt;
+import org.agrona.concurrent.SystemEpochNanoClock;
 import org.agrona.concurrent.UnsafeBuffer;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -18,6 +19,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
 import java.util.Properties;
 import java.util.concurrent.atomic.AtomicBoolean;
 
@@ -31,7 +33,9 @@ public final class MatchingEngine implements FragmentHandler, AutoCloseable {
     private static final Logger logger = LogManager.getLogger(MatchingEngine.class);
     final UnsafeBuffer outBuffer = new UnsafeBuffer(BufferUtil.allocateDirectAligned(256, 64));
 
-    final int engineId;
+    public final int engineId;
+
+    public final int streamId;
 
     final Object2ObjectHashMap<String, OrderBook> orderBooks;
 
@@ -57,6 +61,7 @@ public final class MatchingEngine implements FragmentHandler, AutoCloseable {
                 .unavailableImageHandler(AeronUtil::printUnavailableImage);
         this.aeron = Aeron.connect(ctx);
         this.engineId = engineId;
+        this.streamId = streamId;
         this.orderBooks = new Object2ObjectHashMap<>();
         this.clients = new Int2ObjectHashMap();
         loadOrderBooks(orderBooks, String.format("trading_symbols%d.txt", engineId));
@@ -138,12 +143,99 @@ public final class MatchingEngine implements FragmentHandler, AutoCloseable {
         CloseHelper.close(aeron);
     }
 
-    public boolean process(Order order) {
+    public void process(Order order, OrderBook orderBook) {
         // check if the symbol is traded on the current ME before call process
-        if (order.getType() == OrderType.MARKET) {
-            //
+        // try match immediately
+        UnsafeBuffer buffer;
+        ArrayList<Order> matches = orderBook.match(order);
+        if (matches.size() > 0) {
+            for (Order o : matches) {
+                // report for orders that are matched against
+                buffer = new Report()
+                    .orderId(o.getOrderId())
+                    .clientOrderId(o.getClientOrderId())
+                    .side(o.getSide())
+                    .orderStatus(o.getStatus())
+                    .executionPrice(o.getPrice())
+                    .executionQuantity(o.getLastExecutedQuantity())
+                    .cumExecutionQuantity(o.getFilledQuantity())
+                    .deltaQuantity(o.getLastExecutedQuantity())
+                    .direction(-1)
+                    .totalQuantity(o.getTotalQuantity())
+                    .timestamp(new SystemEpochNanoClock().nanoTime())
+                    .symbol(orderBook.getSymbol())
+                    .buildReport();
+                gatewayPublisher.sendMessage(buffer, gatewayUri, streamId);
+
+                // report for incoming order
+                buffer = new Report()
+                    .orderId(order.getOrderId())
+                    .clientOrderId(order.getClientOrderId())
+                    .side(order.getSide())
+                    .orderStatus(order.getStatus())
+                    .executionPrice(o.getPrice())
+                    .executionQuantity(o.getLastExecutedQuantity())
+                    .cumExecutionQuantity(order.getFilledQuantity())
+                    .totalQuantity(order.getTotalQuantity())
+                    .timestamp(new SystemEpochNanoClock().nanoTime())
+                    .symbol(orderBook.getSymbol())
+                    .buildReport();
+                gatewayPublisher.sendMessage(buffer, gatewayUri, streamId);
+            }
         }
-        return false;
+
+        // if LIMIT order is not matched at its entirety, then add to orderbook => TP need to update accordingly
+        if (order.getType() == OrderType.LIMIT && (order.getStatus() == Status.NEW || order.getStatus() == Status.PARTIALLY_FILLED)) {
+            buffer = new Report()
+                    .orderId(order.getOrderId())
+                    .clientOrderId(order.getClientOrderId())
+                    .side(order.getSide())
+                    .orderStatus(order.getStatus())
+                    .executionQuantity(order.getLastExecutedQuantity())
+                    .cumExecutionQuantity(order.getFilledQuantity())
+                    .totalQuantity(order.getTotalQuantity())
+                    .deltaQuantity(order.getTotalQuantity() - order.getFilledQuantity())
+                    .direction(1)
+                    .timestamp(new SystemEpochNanoClock().nanoTime())
+                    .symbol(orderBook.getSymbol())
+                    .buildReport();
+            gatewayPublisher.sendMessage(buffer, gatewayUri, streamId);
+        }
+    }
+
+    public void reject(Order order, OrderBook orderBook) {
+        order.setStatus(Status.REJECTED);
+        UnsafeBuffer buffer = new Report()
+                .orderId(order.getOrderId())
+                .clientOrderId(order.getClientOrderId())
+                .side(order.getSide())
+                .orderStatus(order.getStatus())
+                .totalQuantity(order.getTotalQuantity())
+                .timestamp(new SystemEpochNanoClock().nanoTime())
+                .symbol(orderBook.getSymbol())
+                .buildReport();
+        gatewayPublisher.sendMessage(buffer, gatewayUri, streamId);
+    }
+
+    public void cancel(Order order, OrderBook orderBook) {
+        UnsafeBuffer buffer;
+        if (orderBook.removeOrder(order.getOrderId())) {
+            order.setStatus(Status.CANCELLED);
+            buffer = new Report()
+                    .orderId(order.getOrderId())
+                    .clientOrderId(order.getClientOrderId())
+                    .side(order.getSide())
+                    .orderStatus(order.getStatus())
+                    .totalQuantity(order.getTotalQuantity())
+                    .cumExecutionQuantity(order.getFilledQuantity())
+                    .deltaQuantity(order.getTotalQuantity() - order.getFilledQuantity())
+                    .direction(-1)
+                    .timestamp(new SystemEpochNanoClock().nanoTime())
+                    .symbol(orderBook.getSymbol())
+                    .buildReport();
+        } else {
+            reject(order, orderBook);
+        }
     }
 
     public static void main(String[] args) {

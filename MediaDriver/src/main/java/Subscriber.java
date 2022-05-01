@@ -20,7 +20,6 @@ public class Subscriber {
     private final int fragmentLimitCount;
     private final Object2ObjectHashMap <String, Subscription> subscriptions;
     private final AtomicBoolean running = new AtomicBoolean(true);
-    private final IdleStrategy idleStrategy;
     private static final Logger logger = LogManager.getLogger(Subscriber.class);
 
     public Subscriber(Aeron aeron, FragmentHandler fragmentHandler, int fragmentLimitCount) {
@@ -28,7 +27,6 @@ public class Subscriber {
         this.fragmentLimitCount = fragmentLimitCount;
         this.subscriptions = new Object2ObjectHashMap<>();
         this.aeron = aeron;
-        idleStrategy = new BusySpinIdleStrategy();
     }
 
     public Subscriber(Aeron aeron, FragmentHandler fragmentHandler) {
@@ -36,7 +34,6 @@ public class Subscriber {
         this.fragmentLimitCount = 1;
         this.subscriptions = new Object2ObjectHashMap<>();
         this.aeron = aeron;
-        idleStrategy = new BusySpinIdleStrategy();
     }
 
     public void addSubscription(String channel,int streamId){
@@ -49,6 +46,7 @@ public class Subscriber {
         Thread[] threads = new Thread[subscriptions.size()];
         for (Subscription sub : subscriptions.values()) {
             new Thread(() -> {
+                final IdleStrategy idleStrategy = new BusySpinIdleStrategy();
                 while (running.get()) {
                     final int fragmentsRead = sub.poll(assembler, fragmentLimitCount);
                     idleStrategy.idle(fragmentsRead);
