@@ -1,6 +1,10 @@
+import java.util.Arrays;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map;
+import java.util.List;
 
+import org.apache.log4j.Logger;
 import quickfix.Application;
 import quickfix.DoNotSend;
 import quickfix.FieldNotFound;
@@ -13,6 +17,9 @@ import quickfix.Session;
 import quickfix.SessionID;
 import quickfix.SessionNotFound;
 import quickfix.UnsupportedMessageType;
+import quickfix.SessionSettings;
+import quickfix.FieldConvertError;
+import quickfix.ConfigError;
 import quickfix.field.*;
 import quickfix.fix42.ExecutionReport;
 import quickfix.fix42.NewOrderSingle;
@@ -20,9 +27,15 @@ import quickfix.fix42.OrderCancelRequest;
 
 
 
+
 public class Gateway extends MessageCracker implements Application {
 
+    private static final String VALID_ORDER_TYPES_KEY = "ValidOrderTypes";
+
     private Map<String, Double> priceMap = null;
+    private final HashSet<String> validOrderTypes = new HashSet<>();
+//    private final Logger log = Logger.getLogger(getClass());
+
 
 
     public Gateway() {
@@ -72,25 +85,45 @@ public class Gateway extends MessageCracker implements Application {
         crack(message, sessionId);
     }
 
+    private Price getPrice(Message message, Symbol tickerSymbol) throws FieldNotFound {
+        Price price = null;
+        if (message.toString().contains("Cancel My Order!")) {
+            price = new Price(this.priceMap.get(tickerSymbol.getValue()));
+        } else {
+            if (message.getChar(OrdType.FIELD) == OrdType.LIMIT) {
+                price = new Price(this.priceMap.get(tickerSymbol.getValue()));
+            } else if (message.getChar(OrdType.FIELD) == OrdType.MARKET) {
+                price = new Price(this.priceMap.get(tickerSymbol.getValue()));
+            } else if (message.toString().contains("Cancel")) {
+                price = new Price(this.priceMap.get(tickerSymbol.getValue()));
+            } else {
+                char side = message.getChar(Side.FIELD);
+                //            if (side == Side.BUY) {
+                //                price = new Price(marketDataProvider.getAsk(message.getString(Symbol.FIELD)));
+                //            } else if (side == Side.SELL) {
+                //                price = new Price(marketDataProvider.getBid(message.getString(Symbol.FIELD)));
+                //            } else {
+                if (side != Side.BUY || side != Side.SELL) {
+                    throw new RuntimeException("Invalid order side: " + side);
+                }
+            }
+        }
+        return price;
+    }
+
+
     public void onMessage(NewOrderSingle message, SessionID sessionID)
             throws FieldNotFound, UnsupportedMessageType, IncorrectTagValue {
+
+        validateOrder(message);
+
         String clOrdID = message.getClOrdID().toString();
         OrderID orderNumber = new OrderID(clOrdID);
 
         OrdType orderType = message.getOrdType();
         Symbol tickerSymbol = message.getSymbol();
 
-
-        Price price = null;
-        if (OrdType.MARKET == orderType.getValue()) {
-            if(this.priceMap.containsKey(tickerSymbol.getValue())){
-                price = new Price(this.priceMap.get(tickerSymbol.getValue()));
-            }
-        } else if (OrdType.LIMIT == orderType.getValue()) {
-            if(this.priceMap.containsKey(tickerSymbol.getValue())){
-                price = new Price(this.priceMap.get(tickerSymbol.getValue()));
-            }
-        }
+        Price price = getPrice(message, tickerSymbol);
 
         ExecID execId = new ExecID("1");
         ExecTransType exectutionTransactioType = new ExecTransType(ExecTransType.NEW);
@@ -119,16 +152,18 @@ public class Gateway extends MessageCracker implements Application {
     public void onMessage(OrderCancelRequest cancelRequest, SessionID sessionID)
             throws FieldNotFound, UnsupportedMessageType, IncorrectTagValue {
 
+        validateOrder(cancelRequest);
+
         String clOrdID = cancelRequest.getClOrdID().toString();
         OrderID orderNumber = new OrderID(clOrdID);
 
         Symbol tickerSymbol = cancelRequest.getSymbol();
-
-
-        Price price = null;
-        if(this.priceMap.containsKey(tickerSymbol.getValue())) {
-            price = new Price(this.priceMap.get(tickerSymbol.getValue()));
-        }
+//
+//        Price price = null;
+//        if(this.priceMap.containsKey(tickerSymbol.getValue())) {
+//            price = new Price(this.priceMap.get(tickerSymbol.getValue()));
+//        }
+        Price price = getPrice(cancelRequest, tickerSymbol);
 
         ExecID execId = new ExecID("2");
         ExecTransType exectutionTransactioType = new ExecTransType(ExecTransType.CANCEL);
@@ -155,4 +190,30 @@ public class Gateway extends MessageCracker implements Application {
         }
     }
 
-}
+    private void initializeValidOrderTypes(SessionSettings settings) throws ConfigError, FieldConvertError {
+        if (settings.isSetting(VALID_ORDER_TYPES_KEY)) {
+            List<String> orderTypes = Arrays
+                    .asList(settings.getString(VALID_ORDER_TYPES_KEY).trim().split("\\s*,\\s*"));
+            validOrderTypes.addAll(orderTypes);
+        } else {
+            validOrderTypes.add(OrdType.LIMIT + "");
+        }
+    }
+
+    private void validateOrder(Message order) throws IncorrectTagValue, FieldNotFound {
+        OrdType ordType = new OrdType(order.getChar(OrdType.FIELD));
+        if (!validOrderTypes.contains(Character.toString(ordType.getValue()))) {
+//            log.error("Order type not in ValidOrderTypes setting");
+            System.out.println("Order type not in ValidOrderTypes setting");
+            throw new IncorrectTagValue(ordType.getField());
+        }
+//        if (ordType.getValue() == OrdType.MARKET && marketDataProvider == null) {
+//            log.error("DefaultMarketPrice setting not specified for market order");
+//            throw new IncorrectTagValue(ordType.getField());
+//        }
+    }
+
+
+
+} //public class Gateway
+
