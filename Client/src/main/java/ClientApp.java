@@ -50,10 +50,12 @@ public class ClientApp {
 
         System.out.println("Logged In...");
 
+        //NEW order ID generator
         String idNumber = Long.toString(clientIdGenerator.incrementAndGet());
         ClOrdID orderId  = new ClOrdID(idNumber);
         OrigClOrdID origClOrdID = new OrigClOrdID(idNumber);
 
+        //CANCEL order ID generator
         String cancelIdNumber = Long.toString(clientIdGenerator.incrementAndGet());
         ClOrdID cancelId  = new ClOrdID(cancelIdNumber);
 

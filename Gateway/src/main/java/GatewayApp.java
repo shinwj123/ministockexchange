@@ -3,11 +3,11 @@ import java.util.Scanner;
 import quickfix.*;
 
 public class GatewayApp {
-    public static void main(String[] args) throws ConfigError {
+    public static void main(String[] args) throws ConfigError, FieldConvertError {
 
         SessionSettings settings = new SessionSettings("Gateway/conf/gateway.cfg");
 
-        Application gatewayApplication = new Gateway();
+        Application gatewayApplication = new Gateway(settings);
         FileStoreFactory fileStoreFactory = new FileStoreFactory(settings);
         FileLogFactory fileLogFactory = new FileLogFactory(settings);
         MessageFactory msgFactory = new DefaultMessageFactory();

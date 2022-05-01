@@ -10,6 +10,8 @@ import quickfix.UnsupportedMessageType;
 import quickfix.fix42.ExecutionReport;
 import quickfix.fix42.MessageCracker;
 
+import java.util.Arrays;
+
 public class Client extends MessageCracker implements Application {
 
     @Override
@@ -44,6 +46,8 @@ public class Client extends MessageCracker implements Application {
     @Override
     public void toApp(Message message, SessionID sessionId) throws DoNotSend {
         System.out.println("Client Order Sent: " + message.toString());
+
+        System.out.println(Arrays.toString(message.toString().trim().split("\u0001")));
     }
 
     @Override
@@ -61,8 +65,12 @@ public class Client extends MessageCracker implements Application {
         System.out.println("Order Product : " + message.getSymbol().getValue());
         System.out.println("Order Quantity : " + message.getCumQty().getValue());
         System.out.println("Order Price : " + message.getPrice().getValue());
-        System.out.println("Order Type : " + message.getOrdType().getValue());
-
+//        if (message.getOrdType().getField() == '1') {
+//            System.out.println("Order Type : MARKET");
+//        } else if (message.getOrdType().getValue() == '2') {
+//            System.out.println("Order Type : LIMIT");
+//        }
+        System.out.println("Order Type :" + message.getOrdType().getField());
     }
 
 }

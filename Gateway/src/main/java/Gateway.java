@@ -38,7 +38,9 @@ public class Gateway extends MessageCracker implements Application {
 
 
 
-    public Gateway() {
+    public Gateway(SessionSettings settings) throws ConfigError, FieldConvertError {
+        initializeValidOrderTypes(settings);
+
         priceMap = new HashMap<String, Double>();
         priceMap.put("AAPL", 150.0);
         priceMap.put("NVDA", 200.25);
@@ -114,7 +116,8 @@ public class Gateway extends MessageCracker implements Application {
 
     public void onMessage(NewOrderSingle message, SessionID sessionID)
             throws FieldNotFound, UnsupportedMessageType, IncorrectTagValue {
-
+//        OrdType ordType = new OrdType(message.getChar(OrdType.FIELD));
+//        System.out.println(ordType);
         validateOrder(message);
 
         String clOrdID = message.getClOrdID().toString();
@@ -151,8 +154,6 @@ public class Gateway extends MessageCracker implements Application {
 
     public void onMessage(OrderCancelRequest cancelRequest, SessionID sessionID)
             throws FieldNotFound, UnsupportedMessageType, IncorrectTagValue {
-
-        validateOrder(cancelRequest);
 
         String clOrdID = cancelRequest.getClOrdID().toString();
         OrderID orderNumber = new OrderID(clOrdID);
@@ -192,8 +193,7 @@ public class Gateway extends MessageCracker implements Application {
 
     private void initializeValidOrderTypes(SessionSettings settings) throws ConfigError, FieldConvertError {
         if (settings.isSetting(VALID_ORDER_TYPES_KEY)) {
-            List<String> orderTypes = Arrays
-                    .asList(settings.getString(VALID_ORDER_TYPES_KEY).trim().split("\\s*,\\s*"));
+            List<String> orderTypes = Arrays.asList(settings.getString(VALID_ORDER_TYPES_KEY).trim().split("\\s*,\\s*"));
             validOrderTypes.addAll(orderTypes);
         } else {
             validOrderTypes.add(OrdType.LIMIT + "");
