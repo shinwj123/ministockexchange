@@ -33,6 +33,7 @@ public class Gateway extends MessageCracker implements Application {
     private static final String VALID_ORDER_TYPES_KEY = "ValidOrderTypes";
 
     private Map<String, Double> priceMap = null;
+    private Map<SessionID, ClOrdID> sessionMap = null;
     private final HashSet<String> validOrderTypes = new HashSet<>();
 //    private final Logger log = Logger.getLogger(getClass());
 
@@ -46,6 +47,10 @@ public class Gateway extends MessageCracker implements Application {
         priceMap.put("NVDA", 200.25);
         priceMap.put("TSLA", 850.33);
         priceMap.put("AMZN", 2750.0);
+
+        sessionMap = new HashMap<SessionID, ClOrdID>();
+
+
     }
 
     @Override
@@ -138,6 +143,8 @@ public class Gateway extends MessageCracker implements Application {
         CumQty cummulativeQuantity = new CumQty(100);
         AvgPx avgPx = new AvgPx(this.priceMap.get(tickerSymbol.getValue()));
 
+        sessionMap.put(sessionID, message.getClOrdID());
+
         ExecutionReport executionReport = new ExecutionReport(orderNumber,execId, exectutionTransactioType,
                 purposeOfExecutionReport, orderStatus, symbol, side, leavesQty, cummulativeQuantity, avgPx);
         executionReport.set(price);
@@ -154,6 +161,8 @@ public class Gateway extends MessageCracker implements Application {
 
     public void onMessage(OrderCancelRequest cancelRequest, SessionID sessionID)
             throws FieldNotFound, UnsupportedMessageType, IncorrectTagValue {
+
+        validateCancelRequest(cancelRequest, sessionID);
 
         String clOrdID = cancelRequest.getClOrdID().toString();
         OrderID orderNumber = new OrderID(clOrdID);
@@ -211,6 +220,21 @@ public class Gateway extends MessageCracker implements Application {
 //            log.error("DefaultMarketPrice setting not specified for market order");
 //            throw new IncorrectTagValue(ordType.getField());
 //        }
+    }
+
+    private void validateCancelRequest(OrderCancelRequest cancelRequest, SessionID sessionID) throws FieldNotFound {
+        for (Map.Entry<SessionID,ClOrdID> entry : sessionMap.entrySet()) {
+            if (!(entry.getKey().toString().contains(sessionID.toString()))) {
+                throw new RuntimeException("Not existing Session id");
+            } else if (!(entry.getValue().toString().contains(cancelRequest.getOrigClOrdID().getValue())))  {
+                throw new RuntimeException("Not existing Original client order id");
+            }
+        }
+
+        String origClOrdID = cancelRequest.getOrigClOrdID().toString();
+        ClOrdID removeClOrdID = new ClOrdID(origClOrdID);
+        sessionMap.remove(sessionID, removeClOrdID);
+        
     }
 
 
