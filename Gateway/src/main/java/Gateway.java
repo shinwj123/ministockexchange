@@ -125,7 +125,7 @@ public class Gateway extends MessageCracker implements Application {
 //        System.out.println(ordType);
         validateOrder(message);
 
-        String clOrdID = message.getClOrdID().toString();
+        String clOrdID = message.getClOrdID().getValue();
         OrderID orderNumber = new OrderID(clOrdID);
 
         OrdType orderType = message.getOrdType();
