@@ -161,10 +161,11 @@ public class Gateway extends MessageCracker implements Application {
 
     public void onMessage(OrderCancelRequest cancelRequest, SessionID sessionID)
             throws FieldNotFound, UnsupportedMessageType, IncorrectTagValue {
-
+//        System.out.println(sessionMap);
         validateCancelRequest(cancelRequest, sessionID);
+//        System.out.println(sessionMap);
 
-        String clOrdID = cancelRequest.getClOrdID().toString();
+        String clOrdID = cancelRequest.getClOrdID().getValue();
         OrderID orderNumber = new OrderID(clOrdID);
 
         Symbol tickerSymbol = cancelRequest.getSymbol();
@@ -231,8 +232,9 @@ public class Gateway extends MessageCracker implements Application {
             }
         }
 
-        String origClOrdID = cancelRequest.getOrigClOrdID().toString();
+        String origClOrdID = cancelRequest.getOrigClOrdID().getValue();
         ClOrdID removeClOrdID = new ClOrdID(origClOrdID);
+//        System.out.println(removeClOrdID);
         sessionMap.remove(sessionID, removeClOrdID);
         
     }
