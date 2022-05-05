@@ -25,6 +25,7 @@ public class ClientApp {
     private static final AtomicLong clientIdGenerator = new AtomicLong();
 
 
+
     public static void main(String[] args) throws ConfigError, InterruptedException, IOException, SessionNotFound  {
 
         SessionSettings settings = new SessionSettings("Client/conf/client.cfg");
@@ -59,7 +60,7 @@ public class ClientApp {
         String cancelIdNumber = Long.toString(clientIdGenerator.incrementAndGet());
         ClOrdID cancelId  = new ClOrdID(cancelIdNumber);
 
-        bookSingleOrder(orderId, sessionId);
+        bookMultipleOrder(orderId, sessionId);
 
         sendOrderCancelRequest(origClOrdID, cancelId, sessionId);
 
@@ -71,7 +72,7 @@ public class ClientApp {
         socketInitiator.stop();
     }
 
-    private static void bookSingleOrder(ClOrdID orderID, SessionID sessionID){
+    private static void bookMultipleOrder(ClOrdID orderID, SessionID sessionID){
 //        ClOrdID orderId = new ClOrdID("1");
 //        HandlInst instruction = new HandlInst('1');
 //        Symbol ordProduct = new Symbol("NVDA");
@@ -87,6 +88,7 @@ public class ClientApp {
 
 //        String idNumber = Long.toString(clientIdGenerator.incrementAndGet());
 //        ClOrdID instructionId  = new ClOrdID(idNumber);
+
         NewOrderSingle newOrderSingle = enterOrder(orderID,"NVDA", 100, BUY, LIMIT);
 
         try {
