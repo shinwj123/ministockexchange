@@ -96,9 +96,9 @@ public class ClientApp {
         }
     }
 
-    private static NewOrderSingle enterOrder(ClOrdID orderID, String ordProduct, int numQuantity, char action, char ordType) {
+    private static NewOrderSingle enterOrder(ClOrdID orderID, String ordSymbol, int numQuantity, char action, char ordType) {
         HandlInst instruction = new HandlInst('1');
-        Symbol tickerSymbol = new Symbol(ordProduct);
+        Symbol tickerSymbol = new Symbol(ordSymbol);
         Side side = new Side(action);
         TransactTime transactionTime = new TransactTime();
         OrdType orderType = new OrdType(ordType);
