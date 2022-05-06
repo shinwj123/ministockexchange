@@ -69,8 +69,32 @@ public class OrderBookTest {
         ArrayList<Order> matched = orderBook.match(o);
         assertTrue(orderBook.isStateValid());
         assertEquals(20, orderBook.getPriceLevel(140200, Side.ASK).getTotalVolume());
+        assertEquals(140200, o.getLastExecutedPrice());
+        assertEquals(Status.FILLED, o.getStatus());
         System.out.println("After");
         orderBook.printOrderBook();
+    }
+
+    @Test
+    void matchPartial() {
+        System.out.println("Before");
+        orderBook.printOrderBook();
+        Order o = new Order("client6", clientIdGenerator.incrementAndGet(), 11L, Side.BID, OrderType.LIMIT, 130200, 30);
+        ArrayList<Order> matched = orderBook.match(o);
+        assertTrue(orderBook.isStateValid());
+        assertEquals(130100, o.getLastExecutedPrice());
+        assertEquals(Status.PARTIALLY_FILLED, o.getStatus());
+        System.out.println("After");
+        orderBook.printOrderBook();
+    }
+
+    @Test
+    void noMatch() {
+        Order o = new Order("client6", clientIdGenerator.incrementAndGet(), 11L, Side.BID, OrderType.LIMIT, 130200, 30);
+        ArrayList<Order> matched = orderBook.match(o);
+        assertTrue(orderBook.isStateValid());
+        assertEquals(130100, o.getLastExecutedPrice());
+        assertEquals(Status.PARTIALLY_FILLED, o.getStatus());
     }
 
 }
