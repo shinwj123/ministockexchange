@@ -1,5 +1,7 @@
 import org.agrona.collections.Long2ObjectHashMap;
 import org.agrona.concurrent.UnsafeBuffer;
+
+import java.net.InetAddress;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicLong;
 
@@ -46,6 +48,7 @@ public class OrderBook {
         long quantityToFill = order.getTotalQuantity() - order.getFilledQuantity();
         Long limitPrice = order.getPrice();
         NavigableMap<Long, BookLevel> subBook = book.headMap(limitPrice, true);
+        ArrayList<Order> toRemove = new ArrayList<>();
         for (BookLevel level : subBook.values()) {
             Iterator<Map.Entry<Long, Order>> it = level.getOrderEntries().entrySet().iterator();
             while (it.hasNext() && quantityToFill > 0) {
@@ -58,15 +61,14 @@ public class OrderBook {
                 level.reduceTotalVolume(fillable);
                 matchedOrders.add(candidate);
                 if (candidate.getTotalQuantity() == candidate.getFilledQuantity()) {
-                    it.remove();
-                    removeOrder(candidate.getOrderId());
+                    toRemove.add(candidate);
                 }
             }
             if (quantityToFill == 0) {
                 break;
             }
         }
-
+        toRemove.forEach(o -> removeOrder(o.getOrderId()));
         if (quantityToFill > 0) {
             if (order.getType() == OrderType.LIMIT) {
                 addOrder(order);
@@ -168,14 +170,14 @@ public class OrderBook {
     public static void main(String[] args) {
         final AtomicLong orderIdGenerator = new AtomicLong();
         OrderBook orderBook = new OrderBook("NVDA");
-        Order o1 = new Order(1, orderIdGenerator.incrementAndGet(), Side.BID, OrderType.LIMIT, 100100, 10);
-        Order o2 = new Order(2, orderIdGenerator.incrementAndGet(), Side.BID, OrderType.LIMIT, 110200, 5);
-        Order o7 = new Order(7, orderIdGenerator.incrementAndGet(), Side.BID, OrderType.LIMIT, 120300, 5);
-        Order o3 = new Order(3, orderIdGenerator.incrementAndGet(), Side.BID, OrderType.LIMIT, 120300, 20);
+        Order o1 = new Order("client1", 1, orderIdGenerator.incrementAndGet(), Side.BID, OrderType.LIMIT, 100100, 10);
+        Order o2 = new Order("client1", 2, orderIdGenerator.incrementAndGet(), Side.BID, OrderType.LIMIT, 110200, 5);
+        Order o7 = new Order("client2", 7, orderIdGenerator.incrementAndGet(), Side.BID, OrderType.LIMIT, 120300, 5);
+        Order o3 = new Order("client3", 3, orderIdGenerator.incrementAndGet(), Side.BID, OrderType.LIMIT, 120300, 20);
 
-        Order o4 = new Order(4, orderIdGenerator.incrementAndGet(), Side.ASK, OrderType.LIMIT, 130100, 20);
-        Order o5 = new Order(5, orderIdGenerator.incrementAndGet(), Side.ASK, OrderType.LIMIT, 140200, 30);
-        Order o6 = new Order(6, orderIdGenerator.incrementAndGet(), Side.ASK, OrderType.LIMIT, 150300, 50);
+        Order o4 = new Order("client4",4, orderIdGenerator.incrementAndGet(), Side.ASK, OrderType.LIMIT, 130100, 20);
+        Order o5 = new Order("client5", 5, orderIdGenerator.incrementAndGet(), Side.ASK, OrderType.LIMIT, 140200, 30);
+        Order o6 = new Order("client6", 6, orderIdGenerator.incrementAndGet(), Side.ASK, OrderType.LIMIT, 150300, 50);
         orderBook.addOrder(o1);
         orderBook.addOrder(o2);
         orderBook.addOrder(o3);
@@ -186,7 +188,7 @@ public class OrderBook {
 
         orderBook.printOrderBook();
 //        ArrayList<Order> matched = orderBook.match(new Order(8, orderIdGenerator.incrementAndGet(), Side.ASK, OrderType.LIMIT, 110100, 22));
-        Order incoming = new Order(8, orderIdGenerator.incrementAndGet(), Side.ASK, OrderType.LIMIT, 130200, 10);
+        Order incoming = new Order("client3", 8, orderIdGenerator.incrementAndGet(), Side.BID, OrderType.LIMIT, 140200, 30);
         ArrayList<Order> matched = orderBook.match(incoming);
         System.out.println(matched.size());
         System.out.println(incoming.getStatus());

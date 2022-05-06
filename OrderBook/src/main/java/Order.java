@@ -52,6 +52,7 @@ enum Status {
 public class Order {
     private final long entryTime;
     private final long orderId;
+    private final String clientCompId;
     private final long clientOrderId;
     private final Side side;
     private final OrderType type;
@@ -63,11 +64,12 @@ public class Order {
     private long lastExecutedPrice;
     private long avgExecutedPrice;
 
-    public Order(long clientOrderId, long orderId, Side side, OrderType type, long price, long totalQuantity) {
+    public Order(String clientCompId, long clientOrderId, long orderId, Side side, OrderType type, long price, long totalQuantity) {
         this.entryTime = new SystemEpochNanoClock().nanoTime();
         this.side = side;
         this.orderId = orderId;
         this.clientOrderId = clientOrderId;
+        this.clientCompId = clientCompId;
         this.type = type;
         if (type == OrderType.MARKET) {
             this.price = side == Side.BID ? Long.MAX_VALUE : 0;
@@ -101,6 +103,10 @@ public class Order {
 
     public long getOrderId() {
         return orderId;
+    }
+
+    public String getClientCompId() {
+        return clientCompId;
     }
 
     public Side getSide() {
@@ -156,6 +162,7 @@ public class Order {
         return "Order{" +
                 "entryTime=" + entryTime +
                 ", orderId=" + orderId +
+                ", clientCompId='" + clientCompId + '\'' +
                 ", clientOrderId=" + clientOrderId +
                 ", side=" + side +
                 ", type=" + type +

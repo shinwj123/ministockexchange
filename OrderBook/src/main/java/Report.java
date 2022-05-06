@@ -5,6 +5,7 @@ import java.nio.charset.StandardCharsets;
 
 public final class Report {
     // For client execution report and tickerplant price level update
+    private byte[] clientCompId; // senderCompId for FIX client max 8 bytes
     private long clientOrderId;
     private long orderId;
     private long timestamp; // event timestamp (order status update)
@@ -32,8 +33,10 @@ public final class Report {
     private static final int DIRECTION_OFFSET = offset += 1;
     private static final int SYMBOL_OFFSET = offset += 8;
 
+    private static final int CLIENT_COMP_ID_OFFSET = offset += 8;
+
     private final UnsafeBuffer buffer;
-    public static int BUFFER_SIZE = 256;
+    public static int BUFFER_SIZE = 128;
 
     public Report() {
         this.buffer = new UnsafeBuffer(BufferUtil.allocateDirectAligned(BUFFER_SIZE, 16));
@@ -60,6 +63,16 @@ public final class Report {
         if (ascii.length <= 8) {
             System.arraycopy(ascii, 0, symbolBytes, 0, ascii.length);
             this.symbol = symbolBytes;
+        }
+        return this;
+    }
+
+    public Report clientCompId(String clientCompId) {
+        byte[] ascii = clientCompId.getBytes(StandardCharsets.US_ASCII);
+        byte[] clientCompIdBytes = new byte[8];
+        if (ascii.length <= 8) {
+            System.arraycopy(ascii, 0, clientCompIdBytes, 0, ascii.length);
+            this.clientCompId = clientCompIdBytes;
         }
         return this;
     }
@@ -118,6 +131,7 @@ public final class Report {
         buffer.putLong(TOTAL_QUANTITY_OFFSET, totalQuantity);
         buffer.putLong(DELTA_QUANTITY_OFFSET, deltaQuantity);
         buffer.putBytes(SYMBOL_OFFSET, symbol);
+        buffer.putBytes(CLIENT_COMP_ID_OFFSET, clientCompId);
         buffer.putByte(DIRECTION_OFFSET, direction);
         buffer.putByte(STATUS_OFFSET, orderStatus);
         buffer.putByte(SIDE_OFFSET, side);
@@ -154,6 +168,10 @@ public final class Report {
 
     public static String getSymbol(UnsafeBuffer buffer) {
         return buffer.getStringWithoutLengthAscii(SYMBOL_OFFSET, 8);
+    }
+
+    public static String getClientCompId(UnsafeBuffer buffer) {
+        return buffer.getStringWithoutLengthAscii(CLIENT_COMP_ID_OFFSET, 8);
     }
 
     public static byte getSide(UnsafeBuffer buffer) {

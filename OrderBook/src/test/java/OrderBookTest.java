@@ -16,15 +16,17 @@ public class OrderBookTest {
     void before() {
 
         orderBook = new OrderBook("NVDA");
+        String testClientId1 = "client1";
+        String testClientId2 = "client2";
         // BID
-        Order o1 = new Order(clientIdGenerator.incrementAndGet(), 1L, Side.BID, OrderType.LIMIT, 100100, 10);
-        Order o2 = new Order(clientIdGenerator.incrementAndGet(), 2L, Side.BID, OrderType.LIMIT, 110200, 5);
-        Order o3 = new Order(clientIdGenerator.incrementAndGet(), 3L, Side.BID, OrderType.LIMIT, 120300, 5);
-        Order o4 = new Order(clientIdGenerator.incrementAndGet(), 4L, Side.BID, OrderType.LIMIT, 120300, 20);
+        Order o1 = new Order(testClientId1, clientIdGenerator.incrementAndGet(), 1L, Side.BID, OrderType.LIMIT, 100100, 10);
+        Order o2 = new Order(testClientId1, clientIdGenerator.incrementAndGet(), 2L, Side.BID, OrderType.LIMIT, 110200, 5);
+        Order o3 = new Order(testClientId1, clientIdGenerator.incrementAndGet(), 3L, Side.BID, OrderType.LIMIT, 120300, 5);
+        Order o4 = new Order(testClientId1, clientIdGenerator.incrementAndGet(), 4L, Side.BID, OrderType.LIMIT, 120300, 20);
         // ASK
-        Order o5 = new Order(clientIdGenerator.incrementAndGet(), 5L, Side.ASK, OrderType.LIMIT, 130100, 20);
-        Order o6 = new Order(clientIdGenerator.incrementAndGet(), 6L, Side.ASK, OrderType.LIMIT, 140200, 30);
-        Order o7 = new Order(clientIdGenerator.incrementAndGet(), 7L, Side.ASK, OrderType.LIMIT, 150300, 50);
+        Order o5 = new Order(testClientId2, clientIdGenerator.incrementAndGet(), 5L, Side.ASK, OrderType.LIMIT, 130100, 20);
+        Order o6 = new Order(testClientId2, clientIdGenerator.incrementAndGet(), 6L, Side.ASK, OrderType.LIMIT, 140200, 30);
+        Order o7 = new Order(testClientId2, clientIdGenerator.incrementAndGet(), 7L, Side.ASK, OrderType.LIMIT, 150300, 50);
 
         orderBook.addOrder(o1);
         orderBook.addOrder(o2);
@@ -37,7 +39,7 @@ public class OrderBookTest {
 
     @Test
     void basicAddRemoveTest() {
-        Order o = new Order(clientIdGenerator.incrementAndGet(), 8L, Side.ASK, OrderType.LIMIT, 130100, 10);
+        Order o = new Order("client3", clientIdGenerator.incrementAndGet(), 8L, Side.ASK, OrderType.LIMIT, 130100, 10);
         orderBook.addOrder(o);
         assertTrue(orderBook.isStateValid());
         orderBook.removeOrder(o.getOrderId());
@@ -51,10 +53,22 @@ public class OrderBookTest {
     void basicMatching() {
         System.out.println("Before");
         orderBook.printOrderBook();
-        Order o = new Order(clientIdGenerator.incrementAndGet(), 9L, Side.BID, OrderType.LIMIT, 130100, 10);
+        Order o = new Order("client4", clientIdGenerator.incrementAndGet(), 9L, Side.BID, OrderType.LIMIT, 130100, 10);
         ArrayList<Order> matched = orderBook.match(o);
         assertTrue(orderBook.isStateValid());
         assertEquals(10, orderBook.getPriceLevel(130100, Side.ASK).getTotalVolume());
+        System.out.println("After");
+        orderBook.printOrderBook();
+    }
+
+    @Test
+    void matchMultiLevels() {
+        System.out.println("Before");
+        orderBook.printOrderBook();
+        Order o = new Order("client5", clientIdGenerator.incrementAndGet(), 10L, Side.BID, OrderType.LIMIT, 140300, 30);
+        ArrayList<Order> matched = orderBook.match(o);
+        assertTrue(orderBook.isStateValid());
+        assertEquals(20, orderBook.getPriceLevel(140200, Side.ASK).getTotalVolume());
         System.out.println("After");
         orderBook.printOrderBook();
     }
