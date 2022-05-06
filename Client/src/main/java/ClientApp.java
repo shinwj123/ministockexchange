@@ -65,17 +65,21 @@ public class ClientApp {
         System.out.println(Arrays.deepToString(orderArray.toArray()));
 
         //NEW order ID generator
-        String idNumber = Long.toString(clientIdGenerator.incrementAndGet());
-        ClOrdID orderId  = new ClOrdID(idNumber);
-        OrigClOrdID origClOrdID = new OrigClOrdID(idNumber);
+
+        ClOrdID orderId;
+        OrigClOrdID origClOrdID = new OrigClOrdID();
+
+        for (int i = 0; i < orderArray.size(); i++) {
+            String idNumber = Long.toString(clientIdGenerator.incrementAndGet());
+            orderId = new ClOrdID(idNumber);
+            origClOrdID = new OrigClOrdID(idNumber);
+
+            bookMultipleOrder(orderId, sessionId, i);
+        }
 
         //CANCEL order ID generator
         String cancelIdNumber = Long.toString(clientIdGenerator.incrementAndGet());
         ClOrdID cancelId  = new ClOrdID(cancelIdNumber);
-
-        for (int i = 0; i < orderArray.size(); i++) {
-            bookMultipleOrder(orderId, sessionId, i);
-        }
 
         sendOrderCancelRequest(origClOrdID, cancelId, sessionId);
 
