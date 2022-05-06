@@ -33,7 +33,7 @@ Vagrant.configure("2") do |config|
         end
     end
 
-    (1..3).each do |i|
+    (1..2).each do |i|
         config.vm.define "matching-engine#{i}" do |me|
             me.vm.hostname = "matching-engine#{i}"
 
@@ -48,7 +48,7 @@ Vagrant.configure("2") do |config|
         end
     end
 
-    (1..3).each do |i|
+    (1..2).each do |i|
 
         config.vm.define "gateway#{i}" do |gateway|
             gateway.vm.hostname = "gateway#{i}"
@@ -73,6 +73,7 @@ Vagrant.configure("2") do |config|
         end
 
         tp.vm.network "private_network", ip: "192.168.0.201", virtualbox__intnet: "exchange_network", nic_type: "virtio"
+        fe.vm.network "forwarded_port", guest: 8081, host: 8081
         tp.vm.provision "shell", path: "scripts/install.sh"
     end
 
