@@ -70,7 +70,7 @@ public class Client extends MessageCracker implements Application {
 //        } else if (message.getOrdType().getValue() == '2') {
 //            System.out.println("Order Type : LIMIT");
 //        }
-        System.out.println("Order Type :" + message.getOrdType().getField());
+        System.out.println("Order Type :" + message.getOrdType().getValue());
     }
 
 }
