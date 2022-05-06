@@ -14,6 +14,8 @@ import quickfix.fix42.NewOrderSingle;
 import quickfix.fix42.OrderCancelRequest;
 
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Scanner;
 import java.util.concurrent.atomic.AtomicLong;
 
@@ -23,6 +25,15 @@ import static quickfix.field.Side.*;
 
 public class ClientApp {
     private static final AtomicLong clientIdGenerator = new AtomicLong();
+    //**will be replaced
+    static final String batchOrder = "NVDA  Side.BUY  OrdType.LIMIT  200.25  10\nAAPL  Side.BUY  OrdType.LIMIT  160  16";
+    static ClientMessageParser clientMessageParser = new ClientMessageParser(batchOrder);
+
+    static Symbol newSymbol = new Symbol();
+    static int newQuantity;
+    static Side newSide = new Side();
+    static OrdType newOrdType = new OrdType();
+    static ArrayList<String[]> orderArray = clientMessageParser.setOrderArray(batchOrder);
 
 
 
@@ -51,6 +62,8 @@ public class ClientApp {
 
         System.out.println("Logged In...");
 
+        System.out.println(Arrays.deepToString(orderArray.toArray()));
+
         //NEW order ID generator
         String idNumber = Long.toString(clientIdGenerator.incrementAndGet());
         ClOrdID orderId  = new ClOrdID(idNumber);
@@ -60,7 +73,9 @@ public class ClientApp {
         String cancelIdNumber = Long.toString(clientIdGenerator.incrementAndGet());
         ClOrdID cancelId  = new ClOrdID(cancelIdNumber);
 
-        bookMultipleOrder(orderId, sessionId);
+        for (int i = 0; i < orderArray.size(); i++) {
+            bookMultipleOrder(orderId, sessionId, i);
+        }
 
         sendOrderCancelRequest(origClOrdID, cancelId, sessionId);
 
@@ -72,7 +87,7 @@ public class ClientApp {
         socketInitiator.stop();
     }
 
-    private static void bookMultipleOrder(ClOrdID orderID, SessionID sessionID){
+    private static void bookMultipleOrder(ClOrdID orderID, SessionID sessionID, int i){
 //        ClOrdID orderId = new ClOrdID("1");
 //        HandlInst instruction = new HandlInst('1');
 //        Symbol ordProduct = new Symbol("NVDA");
@@ -89,7 +104,13 @@ public class ClientApp {
 //        String idNumber = Long.toString(clientIdGenerator.incrementAndGet());
 //        ClOrdID instructionId  = new ClOrdID(idNumber);
 
-        NewOrderSingle newOrderSingle = enterOrder(orderID,"NVDA", 100, BUY, LIMIT);
+        String[] singleOrder = clientMessageParser.getSingleOrder(orderArray, i);
+        newSymbol = clientMessageParser.getSymbol(singleOrder);
+        newQuantity = clientMessageParser.getQuantity(singleOrder);
+        newSide = clientMessageParser.getSide(singleOrder);
+        newOrdType = clientMessageParser.getOrdType(singleOrder);
+
+        NewOrderSingle newOrderSingle = enterOrder(orderID,newSymbol, newQuantity, newSide, newOrdType);
 
         try {
             Session.sendToTarget(newOrderSingle, sessionID);
@@ -98,22 +119,19 @@ public class ClientApp {
         }
     }
 
-    private static NewOrderSingle enterOrder(ClOrdID orderID, String ordSymbol, int numQuantity, char action, char ordType) {
+    private static NewOrderSingle enterOrder(ClOrdID orderID, Symbol ordSymbol, int numQuantity, Side action, OrdType ordType) {
         HandlInst instruction = new HandlInst('1');
-        Symbol tickerSymbol = new Symbol(ordSymbol);
-        Side side = new Side(action);
         TransactTime transactionTime = new TransactTime();
-        OrdType orderType = new OrdType(ordType);
 
         OrderQty quantity = new OrderQty(numQuantity);
 
         NewOrderSingle newOrderSingle;
         newOrderSingle = new NewOrderSingle(orderID ,
                                             instruction,
-                                            tickerSymbol,
-                                            side,
+                                            ordSymbol,
+                                            action,
                                             transactionTime,
-                                            orderType);
+                                            ordType);
 
         newOrderSingle.set(quantity);
 
