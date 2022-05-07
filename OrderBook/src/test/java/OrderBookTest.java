@@ -97,4 +97,31 @@ public class OrderBookTest {
         assertEquals(Status.PARTIALLY_FILLED, o.getStatus());
     }
 
+    @Test
+    void matchMultiOrdersMultiLevels() {
+        Order o1 = new Order("client6", clientIdGenerator.incrementAndGet(), 11L, Side.ASK, OrderType.LIMIT, 130100, 5);
+        Order o2 = new Order("client7", clientIdGenerator.incrementAndGet(), 12L, Side.ASK, OrderType.LIMIT, 140200, 5);
+        orderBook.addOrder(o1);
+        orderBook.addOrder(o2);
+        orderBook.printOrderBook();
+
+        assertEquals(35, orderBook.getPriceLevel(140200, Side.ASK).getTotalVolume());
+        assertEquals(25, orderBook.getPriceLevel(130100, Side.ASK).getTotalVolume());
+        Order o3 = new Order("client7", clientIdGenerator.incrementAndGet(), 13L, Side.BID, OrderType.LIMIT, 140200, 50);
+        ArrayList<Order> matched = orderBook.match(o3);
+        assertTrue(orderBook.isStateValid());
+        assertEquals(140200, o3.getLastExecutedPrice());
+        assertEquals(Status.FILLED, o3.getStatus());
+        orderBook.printOrderBook();
+    }
+
+    @Test
+    void matchEntireSide() {
+        Order o = new Order("client6", clientIdGenerator.incrementAndGet(), 11L, Side.BID, OrderType.LIMIT, 160000, 100);
+        ArrayList<Order> matched = orderBook.match(o);
+        assertTrue(orderBook.isStateValid());
+        assertEquals(150300, o.getLastExecutedPrice());
+        assertEquals(Status.FILLED, o.getStatus());
+        assertEquals(0, orderBook.getBestAsk());
+    }
 }

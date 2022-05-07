@@ -1,8 +1,9 @@
 import org.agrona.concurrent.SystemEpochNanoClock;
-
 import java.math.BigDecimal;
 import java.text.NumberFormat;
-import java.util.concurrent.atomic.AtomicLong;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.Map;
 
 enum OrderType {
     MARKET ((byte) 0x01),
@@ -40,8 +41,22 @@ enum Status {
     REJECTED ((byte) 0x38);
 
     private final byte code;
+
+    private static final Map<Byte, Status> ENUM_MAP;
     Status(byte code) {
         this.code = code;
+    }
+
+    static {
+        Map<Byte, Status> map = new HashMap<>();
+        for (Status instance : Status.values()) {
+            map.put(instance.getByteCode(), instance);
+        }
+        ENUM_MAP = Collections.unmodifiableMap(map);
+    }
+
+    public static String getNameFromByte(byte code) {
+        return ENUM_MAP.get(code).toString().toLowerCase();
     }
 
     public byte getByteCode() {
@@ -154,6 +169,10 @@ public class Order {
     }
 
     public String printPrice() {
+        return NumberFormat.getCurrencyInstance().format(BigDecimal.valueOf(price).scaleByPowerOfTen(-4));
+    }
+
+    public static String getPriceString(long price) {
         return NumberFormat.getCurrencyInstance().format(BigDecimal.valueOf(price).scaleByPowerOfTen(-4));
     }
 

@@ -1,7 +1,6 @@
 import org.agrona.collections.Long2ObjectHashMap;
+import org.agrona.concurrent.SystemEpochNanoClock;
 import org.agrona.concurrent.UnsafeBuffer;
-
-import java.net.InetAddress;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicLong;
 
@@ -142,8 +141,8 @@ public class OrderBook {
     public boolean isStateValid() {
         boolean isLevelValid = asks.values().stream().allMatch(BookLevel::checkLevelTotalVolume)
                 && bids.values().stream().allMatch(BookLevel::checkLevelTotalVolume)
-                && asks.firstKey() == bestAsk
-                && bids.firstKey() == bestBid;
+                && (asks.isEmpty() || asks.firstKey() == bestAsk)
+                && (bids.isEmpty() ||  bids.firstKey() == bestBid);
 
         boolean isMappingSizeValid = asks.size() + bids.size() == price2Level.size()
                 && id2Order.size() == asks.values().stream().mapToInt(BookLevel::getNumOrders).sum()
@@ -199,11 +198,17 @@ public class OrderBook {
 //
 //    orderBook.removeOrder(o7.getOrderId());
 //    orderBook.printOrderBook();
-//        Report report = new Report();
-//        UnsafeBuffer buffer = report.orderId(1234).clientOrderId(5678).symbol("NVDA").totalQuantity(20).side(Side.BID).buildReport();
-//        System.out.println(Report.getClientOrderId(buffer));
-//        System.out.println(Report.getOrderId(buffer));
-//        System.out.println(Report.getSymbol(buffer));
-//        System.out.println((char)Report.getSide(buffer));
+        Report report = new Report();
+        UnsafeBuffer buffer = report.orderId(1234)
+                .clientCompId("client1")
+                .clientOrderId(5678)
+                .orderStatus(Status.PARTIALLY_FILLED)
+                .symbol("NVDA")
+                .totalQuantity(20)
+                .deltaQuantity(-100)
+                .side(Side.BID)
+                .timestamp(new SystemEpochNanoClock().nanoTime())
+                .buildReport();
+        System.out.println(Report.toJson(buffer));
     }
 }

@@ -148,8 +148,7 @@ public final class MatchingEngine implements FragmentHandler, AutoCloseable {
                     .executionPrice(o.getPrice())
                     .executionQuantity(o.getLastExecutedQuantity())
                     .cumExecutionQuantity(o.getFilledQuantity())
-                    .deltaQuantity(o.getLastExecutedQuantity())
-                    .direction(-1)
+                    .deltaQuantity(-o.getLastExecutedQuantity())
                     .totalQuantity(o.getTotalQuantity())
                     .timestamp(new SystemEpochNanoClock().nanoTime())
                     .symbol(orderBook.getSymbol())
@@ -186,7 +185,6 @@ public final class MatchingEngine implements FragmentHandler, AutoCloseable {
                     .cumExecutionQuantity(order.getFilledQuantity())
                     .totalQuantity(order.getTotalQuantity())
                     .deltaQuantity(order.getTotalQuantity() - order.getFilledQuantity())
-                    .direction(1)
                     .timestamp(new SystemEpochNanoClock().nanoTime())
                     .symbol(orderBook.getSymbol())
                     .buildReport();
@@ -198,6 +196,7 @@ public final class MatchingEngine implements FragmentHandler, AutoCloseable {
         order.setStatus(Status.REJECTED);
         UnsafeBuffer buffer = new Report()
                 .orderId(order.getOrderId())
+                .clientCompId(order.getClientCompId())
                 .clientOrderId(order.getClientOrderId())
                 .side(order.getSide())
                 .orderStatus(order.getStatus())
@@ -213,13 +212,13 @@ public final class MatchingEngine implements FragmentHandler, AutoCloseable {
             order.setStatus(Status.CANCELLED);
             UnsafeBuffer buffer = new Report()
                     .orderId(order.getOrderId())
+                    .clientCompId(order.getClientCompId())
                     .clientOrderId(order.getClientOrderId())
                     .side(order.getSide())
                     .orderStatus(order.getStatus())
                     .totalQuantity(order.getTotalQuantity())
                     .cumExecutionQuantity(order.getFilledQuantity())
-                    .deltaQuantity(order.getTotalQuantity() - order.getFilledQuantity())
-                    .direction(-1)
+                    .deltaQuantity(-(order.getTotalQuantity() - order.getFilledQuantity()))
                     .timestamp(new SystemEpochNanoClock().nanoTime())
                     .symbol(orderBook.getSymbol())
                     .buildReport();
