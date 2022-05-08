@@ -98,7 +98,7 @@ public class OrderBookTest {
     }
 
     @Test
-    void matchMultiOrdersMultiLevels() {
+    void matchMultiOrdersMultiLevels1() {
         Order o1 = new Order("client6", clientIdGenerator.incrementAndGet(), 11L, Side.ASK, OrderType.LIMIT, 130100, 5);
         Order o2 = new Order("client7", clientIdGenerator.incrementAndGet(), 12L, Side.ASK, OrderType.LIMIT, 140200, 5);
         orderBook.addOrder(o1);
@@ -112,6 +112,33 @@ public class OrderBookTest {
         assertTrue(orderBook.isStateValid());
         assertEquals(140200, o3.getLastExecutedPrice());
         assertEquals(Status.FILLED, o3.getStatus());
+        orderBook.printOrderBook();
+    }
+
+    @Test
+    void matchMultiOrdersMultiLevels2() {
+        Order o1 = new Order("client6", clientIdGenerator.incrementAndGet(), 11L, Side.BID, OrderType.LIMIT, 110200, 5);
+        Order o2 = new Order("client7", clientIdGenerator.incrementAndGet(), 12L, Side.BID, OrderType.LIMIT, 110200, 15);
+        Order o3 = new Order("client8", clientIdGenerator.incrementAndGet(), 13L, Side.BID, OrderType.LIMIT, 100100, 5);
+        Order o4 = new Order("client9", clientIdGenerator.incrementAndGet(), 14L, Side.BID, OrderType.LIMIT, 120300, 5);
+        orderBook.addOrder(o1);
+        orderBook.addOrder(o2);
+        orderBook.addOrder(o3);
+        orderBook.addOrder(o4);
+        orderBook.printOrderBook();
+
+        Order o5 = new Order("client10", clientIdGenerator.incrementAndGet(), 15L, Side.ASK, OrderType.LIMIT, 110000, 50);
+        ArrayList<Order> matched = orderBook.match(o5);
+        assertTrue(orderBook.isStateValid());
+        assertEquals(6, matched.size());
+        assertEquals(110200, o5.getLastExecutedPrice());
+        assertEquals(Status.FILLED, o5.getStatus());
+        assertEquals(Status.FILLED, o1.getStatus());
+        assertEquals(Status.PARTIALLY_FILLED, o2.getStatus());
+        Order o6 = new Order("client10", clientIdGenerator.incrementAndGet(), 16L, Side.ASK, OrderType.LIMIT, 100000, 10);
+        matched = orderBook.match(o6);
+        assertTrue(orderBook.isStateValid());
+        assertEquals(2, matched.size());
         orderBook.printOrderBook();
     }
 
