@@ -33,7 +33,7 @@
         <module>MatchingEngine</module>
         <module>Gateway</module>
         <module>TickerPlant</module>
-        <module>Orderbook</module>
+        <module>OrderBook</module>
         <module>MediaDriver</module>
     </modules>
     <dependencies>

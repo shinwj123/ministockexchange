@@ -1,3 +1,5 @@
+import org.agrona.concurrent.SystemEpochNanoClock;
+
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
@@ -26,8 +28,8 @@ public class BookSide {
         }
         //find a way to send out the message using market data publoisher class
 
-        int currentSize = previousLevel.getSize();
-        int newSize = currentSize + messageFromME.getSize();
+        long currentSize = previousLevel.getSize();
+        long newSize = currentSize + messageFromME.getSize();
         if (messageFromME.getOrderStatus() != 0) {
             newSize = currentSize - messageFromME.getSize();
         }
@@ -47,6 +49,26 @@ public class BookSide {
 
         }
         //find a way to send out the message
+    }
+
+
+    void priceLevelUpdateFromMessage(String symbol, StockPrice stockPrice, long deltaQuantity, byte side, int direction, PriceLevel previousLevel) {
+        //if add size to a price level
+
+        long currentSize = previousLevel.getSize();
+        long newSize = currentSize + (int) deltaQuantity;
+        if (direction != -1) {
+            newSize = currentSize - (int) deltaQuantity;
+        }
+
+
+        PriceLevel newLevel = toPriceLevel(symbol, stockPrice, newSize);
+        if (newSize > 0) {
+            bookSideTree.put(stockPrice, newLevel);
+        } else {
+            bookSideTree.remove(stockPrice);
+        }
+
     }
 
     public static byte[] IEXPriceLevelUpdateMessage(boolean buySide,
@@ -78,7 +100,7 @@ public class BookSide {
         System.arraycopy(timeStampByte, 0, toReturn, 2, 8);
         byte[] symbolByte = ByteEncoder.stringToByteArray(priceLevel.getStockSymbol(), 8);
         System.arraycopy(symbolByte, 0, toReturn, 10, 8);
-        byte[] sizeByte = ByteEncoder.intToByteArray(priceLevel.getSize());
+        byte[] sizeByte = ByteEncoder.longToByteArray(priceLevel.getSize());
         System.arraycopy(sizeByte, 0, toReturn, 18, 4);
         byte[] priceByte = ByteEncoder.longToByteArray(priceLevel.getStockPrice().getNumber());
         System.arraycopy(priceByte, 0, toReturn, 22, 8);
@@ -106,7 +128,7 @@ public class BookSide {
 
 
 
-    private PriceLevel toPriceLevel(final MessageFromME messageFromME, int newSize) {
+    public static PriceLevel toPriceLevel(final MessageFromME messageFromME, long newSize) {
         //extract info from message to construct the pricelevel objects.
         StockPrice price = new StockPrice(messageFromME.getPrice());
         return new PriceLevel(
@@ -116,4 +138,17 @@ public class BookSide {
                 newSize
         );
     }
+
+
+    public static PriceLevel toPriceLevel(String symbol, StockPrice stockPrice, long newSize) {
+        //extract info from message to construct the pricelevel objects.
+        return new PriceLevel(
+                symbol,
+                new SystemEpochNanoClock().nanoTime(),
+                stockPrice,
+                newSize
+        );
+    }
+
+
 }

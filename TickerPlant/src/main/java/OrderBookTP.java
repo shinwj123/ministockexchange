@@ -3,11 +3,15 @@ import java.util.List;
 
 import static java.lang.Integer.MAX_VALUE;
 
+
+
+
+
 public class OrderBookTP implements OrderBook {
     private final String stockSymbol;
 
-    private final BookSide bidSide;
-    private final BookSide askSide;
+    public final BookSide bidSide;
+    public final BookSide askSide;
 
     public OrderBookTP(final String symbol) {
         this.stockSymbol = symbol;
@@ -26,6 +30,28 @@ public class OrderBookTP implements OrderBook {
 
         } else if (messageFromME.getSide() == 1) {
             bidSide.priceLevelUpdateFromMessage(messageFromME);
+
+        } else {
+            throw new IllegalArgumentException("Unknown Price Level Update side. Cannot proceed.");
+        }
+    }
+
+    public void priceLevelUpdate(String symbol, StockPrice stockPrice, long deltaQuantity, byte side, int direction, PriceLevel previousLevel) {
+        //based on the message, if it is sell, put into the ask side
+        //if it is buying, put into the bidside
+        // else, through illigal arg exception since messagetype is unknown...
+
+        byte buyUpdateTag = (byte) 0x38;
+        byte sellUpdateTag = (byte) 0x35;
+        byte eventProcessing = (byte) 0x0;
+        byte eventComplete = (byte) 0x1;
+        if (side == sellUpdateTag) {
+            // find some way to send the message using MarketDataPublisher
+            askSide.priceLevelUpdateFromMessage(symbol, stockPrice, deltaQuantity, side, direction, previousLevel);
+
+
+        } else if (side == buyUpdateTag) {
+            bidSide.priceLevelUpdateFromMessage(symbol, stockPrice, deltaQuantity, side, direction, previousLevel);
 
         } else {
             throw new IllegalArgumentException("Unknown Price Level Update side. Cannot proceed.");
@@ -61,7 +87,7 @@ public class OrderBookTP implements OrderBook {
         System.arraycopy(timeStampByte, 0, toReturn, 2, 8);
         byte[] symbolByte = ByteEncoder.stringToByteArray(priceLevel.getStockSymbol(), 8);
         System.arraycopy(symbolByte, 0, toReturn, 10, 8);
-        byte[] sizeByte = ByteEncoder.intToByteArray(priceLevel.getSize());
+        byte[] sizeByte = ByteEncoder.longToByteArray(priceLevel.getSize());
         System.arraycopy(sizeByte, 0, toReturn, 18, 4);
         byte[] priceByte = ByteEncoder.longToByteArray(priceLevel.getStockPrice().getNumber());
         System.arraycopy(priceByte, 0, toReturn, 22, 8);

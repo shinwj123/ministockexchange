@@ -4,13 +4,13 @@ public class PriceLevel {
     private final String stockSymbol;
     private final long timeStamp;
     private final StockPrice stockPrice;
-    private int size;
+    private long size;
 
     public PriceLevel (
              String stockSymbolInput,
              long timeStampInput,
              StockPrice stockPriceInput,
-             int sizeInput) {
+             long sizeInput) {
         this.stockSymbol = Objects.requireNonNull(stockSymbolInput, "stockSymbol");
         this.timeStamp = Objects.requireNonNull(timeStampInput, "timeStamp");
         this.stockPrice = Objects.requireNonNull(stockPriceInput, "stockPrice");
@@ -29,7 +29,7 @@ public class PriceLevel {
         return this.stockPrice;
     }
 
-    public int getSize() {
+    public long getSize() {
         return this.size;
     }
 
