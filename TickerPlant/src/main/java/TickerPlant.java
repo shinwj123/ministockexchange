@@ -167,7 +167,7 @@ public final class TickerPlant implements FragmentHandler, AutoCloseable {
 
         toUpdate.priceLevelUpdate(symbol, stockPrice, deltaQuantity, side, direction, previousLevel) ;
 
-         
+
         server.broadcast();
 
         /*if (side == buyUpdateTag) {
