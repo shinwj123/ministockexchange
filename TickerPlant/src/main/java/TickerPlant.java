@@ -148,20 +148,12 @@ public final class TickerPlant implements FragmentHandler, AutoCloseable {
         StockPrice stockPrice = new StockPrice(price);
         OrderBookTP toUpdate = orderBooks.get(symbol);
 
-        byte[] message = new byte[29];
+
 
         byte side = Report.getSide(report);//size 1, offset 0
-        message[0] = side;
-        byte[] symbolByte = ByteEncoder.stringToByteArray(symbol, 8); //size 8, offset 1
-        System.arraycopy(symbolByte, 0, message, 1, 8);
-        byte[] deltaQuantityByte = ByteEncoder.longToByteArray(deltaQuantity); //size 8, offset 9
-        System.arraycopy(deltaQuantityByte, 0, message, 9, 8);
-        byte[] directionByte = ByteEncoder.intToByteArray(direction); // size 4, offset 17
-        System.arraycopy(directionByte, 0, message, 17, 4);
-        byte[] priceByte = ByteEncoder.longToByteArray(price); // size 8, offset 21
-        System.arraycopy(priceByte, 0, message, 21, 8);
 
-        server.broadcast(message);
+
+
 
         if (toUpdate == null) {
             toUpdate = new OrderBookTP(symbol);
@@ -174,6 +166,9 @@ public final class TickerPlant implements FragmentHandler, AutoCloseable {
         }
 
         toUpdate.priceLevelUpdate(symbol, stockPrice, deltaQuantity, side, direction, previousLevel) ;
+
+         
+        server.broadcast();
 
         /*if (side == buyUpdateTag) {
             PriceLevel previousLevel = toUpdate.bidSide.getSpecificLevel(stockPrice);
