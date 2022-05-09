@@ -52,14 +52,12 @@ public class BookSide {
     }
 
 
-    void priceLevelUpdateFromMessage(String symbol, StockPrice stockPrice, long deltaQuantity, byte side, int direction, PriceLevel previousLevel) {
+    void priceLevelUpdateFromMessage(String symbol, StockPrice stockPrice, long deltaQuantity, byte side, PriceLevel previousLevel) {
         //if add size to a price level
 
         long currentSize = previousLevel.getSize();
-        long newSize = currentSize + (int) deltaQuantity;
-        if (direction != -1) {
-            newSize = currentSize - (int) deltaQuantity;
-        }
+        long newSize = currentSize + deltaQuantity;
+
 
 
         PriceLevel newLevel = toPriceLevel(symbol, stockPrice, newSize);

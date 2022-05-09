@@ -3,10 +3,6 @@ import java.util.List;
 
 import static java.lang.Integer.MAX_VALUE;
 
-
-
-
-
 public class OrderBookTP implements OrderBook {
     private final String stockSymbol;
 
@@ -36,7 +32,7 @@ public class OrderBookTP implements OrderBook {
         }
     }
 
-    public void priceLevelUpdate(String symbol, StockPrice stockPrice, long deltaQuantity, byte side, int direction, PriceLevel previousLevel) {
+    public void priceLevelUpdate(String symbol, StockPrice stockPrice, long deltaQuantity, byte side, PriceLevel previousLevel) {
         //based on the message, if it is sell, put into the ask side
         //if it is buying, put into the bidside
         // else, through illigal arg exception since messagetype is unknown...
@@ -47,11 +43,11 @@ public class OrderBookTP implements OrderBook {
         byte eventComplete = (byte) 0x1;
         if (side == sellUpdateTag) {
             // find some way to send the message using MarketDataPublisher
-            askSide.priceLevelUpdateFromMessage(symbol, stockPrice, deltaQuantity, side, direction, previousLevel);
+            askSide.priceLevelUpdateFromMessage(symbol, stockPrice, deltaQuantity, side, previousLevel);
 
 
         } else if (side == buyUpdateTag) {
-            bidSide.priceLevelUpdateFromMessage(symbol, stockPrice, deltaQuantity, side, direction, previousLevel);
+            bidSide.priceLevelUpdateFromMessage(symbol, stockPrice, deltaQuantity, side, previousLevel);
 
         } else {
             throw new IllegalArgumentException("Unknown Price Level Update side. Cannot proceed.");

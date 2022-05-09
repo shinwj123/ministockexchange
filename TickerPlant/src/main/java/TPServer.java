@@ -45,12 +45,4 @@ public class TPServer extends WebSocketServer {
         System.out.println("server started successfully");
     }
 
-
-    /*public static void main(String[] args) {
-        String host = "localhost";
-        int port = 8887;
-
-        WebSocketServer server = new SimpleServer(new InetSocketAddress(host, port));
-        server.run();
-    }*/
 }

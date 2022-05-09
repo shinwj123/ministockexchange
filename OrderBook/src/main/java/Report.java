@@ -1,10 +1,12 @@
 import org.agrona.BufferUtil;
 import org.agrona.concurrent.UnsafeBuffer;
+import org.json.JSONObject;
 
 import java.nio.charset.StandardCharsets;
 
 public final class Report {
     // For client execution report and tickerplant price level update
+    private byte[] clientCompId; // senderCompId for FIX client max 8 bytes
     private long clientOrderId;
     private long orderId;
     private long timestamp; // event timestamp (order status update)
@@ -14,8 +16,7 @@ public final class Report {
     private long cumExecutionQuantity; // cumulative executed quantity
     private byte[] symbol; // max 8 bytes
     private byte side; // consistent with IEX DEEP  BID: '8' 0x38 ASK: '5' 0x35
-    private long deltaQuantity; // for TP to update price level
-    private byte direction; // for TP to update price level  INCREASE: 'U' 0x55 DECREASE: 'D' 0x44
+    private long deltaQuantity; // for TP to update price level; negative number indicates decrease in quantity
     private byte orderStatus; //
 
     private static int offset = 0;
@@ -27,13 +28,13 @@ public final class Report {
     private static final int CUM_EXEC_QUANTITY_OFFSET = offset += Long.BYTES;
     private static final int TOTAL_QUANTITY_OFFSET = offset += Long.BYTES;
     private static final int DELTA_QUANTITY_OFFSET = offset += Long.BYTES;
-    private static final int STATUS_OFFSET = offset += 1;
+    private static final int SYMBOL_OFFSET = offset += Long.BYTES;
+    private static final int CLIENT_COMP_ID_OFFSET = offset += 8;
+    private static final int STATUS_OFFSET = offset += 8;
     private static final int SIDE_OFFSET = offset += 1;
-    private static final int DIRECTION_OFFSET = offset += 1;
-    private static final int SYMBOL_OFFSET = offset += 8;
 
     private final UnsafeBuffer buffer;
-    public static int BUFFER_SIZE = 256;
+    public static int BUFFER_SIZE = 128;
 
     public Report() {
         this.buffer = new UnsafeBuffer(BufferUtil.allocateDirectAligned(BUFFER_SIZE, 16));
@@ -60,6 +61,16 @@ public final class Report {
         if (ascii.length <= 8) {
             System.arraycopy(ascii, 0, symbolBytes, 0, ascii.length);
             this.symbol = symbolBytes;
+        }
+        return this;
+    }
+
+    public Report clientCompId(String clientCompId) {
+        byte[] ascii = clientCompId.getBytes(StandardCharsets.US_ASCII);
+        byte[] clientCompIdBytes = new byte[8];
+        if (ascii.length <= 8) {
+            System.arraycopy(ascii, 0, clientCompIdBytes, 0, ascii.length);
+            this.clientCompId = clientCompIdBytes;
         }
         return this;
     }
@@ -94,15 +105,6 @@ public final class Report {
         return this;
     }
 
-    public Report direction(int dir) {
-        if (dir == 1) {
-            this.direction = 0x55;
-        } else if (dir == -1) {
-            this.direction = 0x44;
-        }
-        return this;
-    }
-
     public Report deltaQuantity(long deltaQuantity) {
         this.deltaQuantity = deltaQuantity;
         return this;
@@ -118,7 +120,7 @@ public final class Report {
         buffer.putLong(TOTAL_QUANTITY_OFFSET, totalQuantity);
         buffer.putLong(DELTA_QUANTITY_OFFSET, deltaQuantity);
         buffer.putBytes(SYMBOL_OFFSET, symbol);
-        buffer.putByte(DIRECTION_OFFSET, direction);
+        buffer.putBytes(CLIENT_COMP_ID_OFFSET, clientCompId);
         buffer.putByte(STATUS_OFFSET, orderStatus);
         buffer.putByte(SIDE_OFFSET, side);
         return buffer;
@@ -153,7 +155,11 @@ public final class Report {
     }
 
     public static String getSymbol(UnsafeBuffer buffer) {
-        return buffer.getStringWithoutLengthAscii(SYMBOL_OFFSET, 8);
+        return buffer.getStringWithoutLengthAscii(SYMBOL_OFFSET, 8).trim();
+    }
+
+    public static String getClientCompId(UnsafeBuffer buffer) {
+        return buffer.getStringWithoutLengthAscii(CLIENT_COMP_ID_OFFSET, 8).trim();
     }
 
     public static byte getSide(UnsafeBuffer buffer) {
@@ -164,12 +170,28 @@ public final class Report {
         return buffer.getByte(STATUS_OFFSET);
     }
 
-    public static int getDirection(UnsafeBuffer buffer) {
-        byte dir = buffer.getByte(DIRECTION_OFFSET);
-        return dir == 0x55 ? 1 : -1;
-    }
-
     public static long getDeltaQuantity(UnsafeBuffer buffer) {
         return buffer.getLong(DELTA_QUANTITY_OFFSET);
+    }
+
+    public static JSONObject toJson(UnsafeBuffer buffer) {
+        JSONObject json = new JSONObject();
+        json.put("clientCompId", Report.getClientCompId(buffer));
+        json.put("orderId", Report.getOrderId(buffer));
+        json.put("clientOrderId", Report.getClientOrderId(buffer));
+        String side = Report.getSide(buffer) == 0x38 ? "bid" : "ask";
+        json.put("side", side);
+        json.put("symbol", Report.getSymbol(buffer));
+        json.put("status", Status.getNameFromByte(Report.getOrderStatus(buffer)));
+        json.put("totalQuantity", Report.getTotalQuantity(buffer));
+        long executionPrice = Report.getExecutionPrice(buffer);
+        json.put("executionPrice", executionPrice != 0 ? Order.getPriceString(executionPrice) : JSONObject.NULL);
+        long executionQuantity = Report.getExecutionQuantity(buffer);
+        json.put("executionQuantity", executionQuantity != 0 ? executionQuantity : JSONObject.NULL);
+        json.put("cumExecutionQuantity", Report.getCumExecutionQuantity(buffer));
+        long deltaQuantity = Report.getDeltaQuantity(buffer);
+        json.put("deltaQuantity", deltaQuantity != 0 ? deltaQuantity : JSONObject.NULL);
+        json.put("timestamp", Report.getTimestamp(buffer));
+        return json;
     }
 }

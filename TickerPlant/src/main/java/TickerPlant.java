@@ -50,7 +50,6 @@ public final class TickerPlant implements FragmentHandler, AutoCloseable {
     final Object2ObjectHashMap<String, OrderBookTP> orderBooks;
 
     final TPServer server;
-    //final TPClient client;
 
     public TickerPlant(String aeronDirectory, int[] streamIds, String ipAddr) throws URISyntaxException {
         try {
@@ -83,14 +82,6 @@ public final class TickerPlant implements FragmentHandler, AutoCloseable {
 
         this.server = new TPServer(new InetSocketAddress(host, port));
         server.start();
-
-        //this.client = new TPClient(new URI("ws://localhost:8080"));
-        //client.connect();
-
-
-
-
-
 
     }
 
@@ -142,18 +133,12 @@ public final class TickerPlant implements FragmentHandler, AutoCloseable {
         String symbol = Report.getSymbol(report);
 
         long deltaQuantity = Report.getDeltaQuantity(report);
-        int direction = Report.getDirection(report);
         long price = Report.getExecutionPrice(report);
 
         StockPrice stockPrice = new StockPrice(price);
         OrderBookTP toUpdate = orderBooks.get(symbol);
 
-
-
         byte side = Report.getSide(report);//size 1, offset 0
-
-
-
 
         if (toUpdate == null) {
             toUpdate = new OrderBookTP(symbol);
@@ -165,37 +150,9 @@ public final class TickerPlant implements FragmentHandler, AutoCloseable {
             previousLevel = toUpdate.askSide.getSpecificLevel(stockPrice);
         }
 
-        toUpdate.priceLevelUpdate(symbol, stockPrice, deltaQuantity, side, direction, previousLevel) ;
+        toUpdate.priceLevelUpdate(symbol, stockPrice, deltaQuantity, side, previousLevel) ;
 
-
-        server.broadcast();
-
-        /*if (side == buyUpdateTag) {
-            PriceLevel previousLevel = toUpdate.bidSide.getSpecificLevel(stockPrice);
-            if (previousLevel == null) {
-                previousLevel = BookSide.toPriceLevel(symbol, stockPrice, deltaQuantity);
-            }
-            byte[] preProcessingMessage = BookSide.IEXPriceLevelUpdateMessage(true, previousLevel, true);
-            UnsafeBuffer message = new UnsafeBuffer(BufferUtil.allocateDirectAligned(256, 16));
-
-
-
-
-
-
-        } else if (side == sellUpdateTag) {
-            PriceLevel previousLevel = toUpdate.askSide.getSpecificLevel(stockPrice);
-            if (previousLevel == null) {
-                previousLevel = BookSide.toPriceLevel(symbol, stockPrice, deltaQuantity);
-            }
-            byte[] preProcessingMessage = BookSide.IEXPriceLevelUpdateMessage(false, previousLevel, true);
-
-
-
-        } else {
-            throw new IllegalArgumentException("Unknown Price Level Update side. Cannot proceed.");
-        }*/
-
+        server.broadcast(Report.toJson(report).toString());
     }
 
 

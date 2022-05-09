@@ -27,6 +27,8 @@ public class websocketTest {
         while(running.get()) {
             server.broadcast(message + counter);
             counter++;
+            Thread.sleep(1000);
+
 
         }
         server.stop();

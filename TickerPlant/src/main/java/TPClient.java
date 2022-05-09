@@ -32,7 +32,7 @@ public class TPClient extends WebSocketClient {
 
     @Override
     public void onMessage(String message) {
-        System.out.println("received message: " + message);//becarefu of buffer
+        System.out.println("received message: " + message);//be careful of buffer
     }
 
     @Override

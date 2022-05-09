@@ -1,8 +1,9 @@
 import org.agrona.concurrent.SystemEpochNanoClock;
-
 import java.math.BigDecimal;
 import java.text.NumberFormat;
-import java.util.concurrent.atomic.AtomicLong;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.Map;
 
 enum OrderType {
     MARKET ((byte) 0x01),
@@ -40,8 +41,22 @@ enum Status {
     REJECTED ((byte) 0x38);
 
     private final byte code;
+
+    private static final Map<Byte, Status> ENUM_MAP;
     Status(byte code) {
         this.code = code;
+    }
+
+    static {
+        Map<Byte, Status> map = new HashMap<>();
+        for (Status instance : Status.values()) {
+            map.put(instance.getByteCode(), instance);
+        }
+        ENUM_MAP = Collections.unmodifiableMap(map);
+    }
+
+    public static String getNameFromByte(byte code) {
+        return ENUM_MAP.get(code).toString().toLowerCase();
     }
 
     public byte getByteCode() {
@@ -52,6 +67,7 @@ enum Status {
 public class Order {
     private final long entryTime;
     private final long orderId;
+    private final String clientCompId;
     private final long clientOrderId;
     private final Side side;
     private final OrderType type;
@@ -63,11 +79,12 @@ public class Order {
     private long lastExecutedPrice;
     private long avgExecutedPrice;
 
-    public Order(long clientOrderId, long orderId, Side side, OrderType type, long price, long totalQuantity) {
+    public Order(String clientCompId, long clientOrderId, long orderId, Side side, OrderType type, long price, long totalQuantity) {
         this.entryTime = new SystemEpochNanoClock().nanoTime();
         this.side = side;
         this.orderId = orderId;
         this.clientOrderId = clientOrderId;
+        this.clientCompId = clientCompId;
         this.type = type;
         if (type == OrderType.MARKET) {
             this.price = side == Side.BID ? Long.MAX_VALUE : 0;
@@ -101,6 +118,10 @@ public class Order {
 
     public long getOrderId() {
         return orderId;
+    }
+
+    public String getClientCompId() {
+        return clientCompId;
     }
 
     public Side getSide() {
@@ -151,11 +172,16 @@ public class Order {
         return NumberFormat.getCurrencyInstance().format(BigDecimal.valueOf(price).scaleByPowerOfTen(-4));
     }
 
+    public static String getPriceString(long price) {
+        return NumberFormat.getCurrencyInstance().format(BigDecimal.valueOf(price).scaleByPowerOfTen(-4));
+    }
+
     @Override
     public String toString() {
         return "Order{" +
                 "entryTime=" + entryTime +
                 ", orderId=" + orderId +
+                ", clientCompId='" + clientCompId + '\'' +
                 ", clientOrderId=" + clientOrderId +
                 ", side=" + side +
                 ", type=" + type +
