@@ -25,7 +25,7 @@ import static quickfix.field.Side.*;
 
 public class ClientApp {
     private static final AtomicLong clientIdGenerator = new AtomicLong();
-    //**will be replaced
+    //TODO: replace with batch script
     static final String batchOrder = "NVDA  Side.BUY  OrdType.LIMIT  200.25  10\nAAPL  Side.BUY  OrdType.LIMIT  160  16";
     static ClientMessageParser clientMessageParser = new ClientMessageParser(batchOrder);
 

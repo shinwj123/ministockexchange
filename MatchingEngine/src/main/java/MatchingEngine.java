@@ -1,8 +1,11 @@
 import io.aeron.Aeron;
 import io.aeron.ChannelUriStringBuilder;
+import io.aeron.Image;
+import io.aeron.Publication;
 import io.aeron.driver.MediaDriver;
 import io.aeron.logbuffer.FragmentHandler;
 import io.aeron.logbuffer.Header;
+import org.agrona.BufferUtil;
 import org.agrona.CloseHelper;
 import org.agrona.DirectBuffer;
 import org.agrona.collections.Int2ObjectHashMap;
@@ -18,10 +21,18 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.net.InetAddress;
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
+import java.util.Objects;
 import java.util.Properties;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+
+import static java.lang.Boolean.TRUE;
+import static java.nio.charset.StandardCharsets.UTF_8;
 
 public final class MatchingEngine implements FragmentHandler, AutoCloseable {
     // Matching Engine per group of securities
@@ -30,10 +41,19 @@ public final class MatchingEngine implements FragmentHandler, AutoCloseable {
     private Publisher multicastPublisher;
     private Subscriber gatewaySubscriber;
     private static final Logger logger = LogManager.getLogger(MatchingEngine.class);
-    public final int streamId;
+    public static int streamId;
     final Object2ObjectHashMap<String, OrderBook> orderBooks;
     final String multicastUri;
 
+    private static final Pattern MESSAGE_PATTERN = Pattern.compile("HELLO ([0-9]+)");
+    private State state;
+    private UnsafeBuffer buffer;
+
+
+    private enum State {
+        INITIAL,
+        CONNECTED
+    }
 
     public MatchingEngine(String aeronDirectory, int streamId, String ipAddr) {
         try {
@@ -48,8 +68,11 @@ public final class MatchingEngine implements FragmentHandler, AutoCloseable {
                 .unavailableImageHandler(AeronUtil::printUnavailableImage);
         this.aeron = Aeron.connect(ctx);
         this.streamId = streamId;
+        this.state = State.INITIAL;
         this.orderBooks = new Object2ObjectHashMap<>();
         loadOrderBooks(orderBooks, String.format("trading_symbols%d.txt", streamId));
+
+
 
         final String matchingEngineUri = new ChannelUriStringBuilder()
                 .reliable(true)
@@ -70,6 +93,45 @@ public final class MatchingEngine implements FragmentHandler, AutoCloseable {
         // same multicast address for all matching engines
         multicastPublisher.addPublication(multicastUri, streamId);
         gatewaySubscriber.addSubscription(matchingEngineUri, streamId);
+
+        this.state = State.CONNECTED;
+    }
+
+    public void onReceiveMessage(final String message, String ipAddr) {
+        Objects.requireNonNull(message, "message");
+
+        logger.debug("receive [0x{}]: {}", Integer.toUnsignedString(streamId), message);
+
+        switch (this.state) {
+            case INITIAL: {
+                this.onReceiveMessageInitial(message, ipAddr);
+                break;
+            }
+            case CONNECTED: {
+                sendMessage(multicastPublisher, this.buffer, message);
+                break;
+            }
+        }
+    }
+
+    private void onReceiveMessageInitial(final String message, String ipAddr) {
+        final Matcher matcher = MESSAGE_PATTERN.matcher(message);
+        if (!matcher.matches()) {
+            logger.warn("client sent malformed HELLO message: {}", message);
+            return;
+        }
+
+        final int port = Integer.parseUnsignedInt(matcher.group(1));
+
+        final String matchingEngineUri = new ChannelUriStringBuilder()
+                .reliable(true)
+                .media("udp")
+                .endpoint(String.format("%s:40123", ipAddr))
+                .build();
+
+        multicastPublisher = new Publisher(this.aeron);
+
+        this.state = State.CONNECTED;
     }
 
     private static void loadProperties(String propertiesFile) throws IOException {
@@ -100,6 +162,30 @@ public final class MatchingEngine implements FragmentHandler, AutoCloseable {
         } catch (IOException e) {
             e.printStackTrace();
         }
+    }
+
+    private static boolean sendMessage(final Publication pub, final UnsafeBuffer buffer, final String text) {
+        logger.debug("send: [session 0x{}] {}", Integer.toUnsignedString(streamId), text);
+
+        final byte[] value = text.getBytes(UTF_8);
+        buffer.putBytes(0, value);
+
+        long result = 0L;
+        for (int index = 0; index < 5; ++index) {
+            result = pub.offer(buffer, 0, text.length());
+            if (result < 0L) {
+                try {
+                    Thread.sleep(100L);
+                } catch (final InterruptedException e) {
+                    Thread.currentThread().interrupt();
+                }
+                continue;
+            }
+            return true;
+        }
+
+        logger.error("could not send: {}", Long.valueOf(result));
+        return false;
     }
 
     @Override
