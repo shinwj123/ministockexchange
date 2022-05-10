@@ -31,9 +31,10 @@
     </build>
     <modules>
         <module>MatchingEngine</module>
+        <module>Client</module>
         <module>Gateway</module>
         <module>TickerPlant</module>
-        <module>OrderBook</module>
+        <module>Orderbook</module>
         <module>MediaDriver</module>
     </modules>
     <dependencies>

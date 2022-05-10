@@ -1,5 +1,4 @@
-import io.aeron.Aeron;
-import io.aeron.ChannelUriStringBuilder;
+import io.aeron.*;
 import io.aeron.driver.MediaDriver;
 import io.aeron.logbuffer.FragmentHandler;
 import io.aeron.logbuffer.Header;
@@ -12,8 +11,13 @@ import org.agrona.concurrent.UnsafeBuffer;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+import java.net.InetSocketAddress;
+import java.nio.file.Path;
 import java.util.Random;
 import java.util.concurrent.atomic.AtomicBoolean;
+
+import static java.lang.Boolean.TRUE;
+import static java.nio.charset.StandardCharsets.UTF_8;
 
 public final class SimpleGateway implements FragmentHandler, AutoCloseable {
     private final Aeron aeron;
@@ -23,6 +27,7 @@ public final class SimpleGateway implements FragmentHandler, AutoCloseable {
     final UnsafeBuffer outBuffer = new UnsafeBuffer(BufferUtil.allocateDirectAligned(256, 64));
     private final String gatewayPubUri;
     private final int streamId;
+
 
     public SimpleGateway(String aeronDirectory, String gatewayPubUri, String iface, int streamId) {
         // TODO add subscription for all matching engines, one streamId per ME
@@ -56,12 +61,18 @@ public final class SimpleGateway implements FragmentHandler, AutoCloseable {
                 new String(data));
     }
 
-    public void start(AtomicBoolean running) {
-        final Random random = new Random();
-        matchingEngineSubscriber.start();
-        while (running.get()) {
-            final int numBytes = outBuffer.putStringAscii(0, Integer.toUnsignedString(random.nextInt()));
-            matchingEnginePublisher.sendMessage(outBuffer, gatewayPubUri, streamId);
+    public void start(AtomicBoolean running) throws InterruptedException {
+//        final Random random = new Random();
+//        matchingEngineSubscriber.start();
+//        while (running.get()) {
+//            final int numBytes = outBuffer.putStringAscii(0, Integer.toUnsignedString(random.nextInt()));
+//            matchingEnginePublisher.sendMessage(outBuffer, gatewayPubUri, streamId);
+//        }
+
+        try (final Subscription matchingEngineSubscriber = this.setupSubscription()) {
+            try (final Publication matchingEnginePublisher = this.setupPublication()) {
+                this.runLoop(matchingEngineSubscriber, matchingEnginePublisher);
+            }
         }
 
     }
@@ -74,7 +85,67 @@ public final class SimpleGateway implements FragmentHandler, AutoCloseable {
         CloseHelper.close(aeron);
     }
 
-  public static void main(String[] args) {
+    private Subscription setupSubscription() {
+        final String sub_uri = new ChannelUriStringBuilder()
+                            .reliable(TRUE)
+                            .media("udp")
+                            .endpoint("224.0.1.1:40456")
+                            .build();
+
+        logger.debug("subscription URI: {}", sub_uri);
+        return this.aeron.addSubscription(sub_uri, streamId);
+    }
+
+    private Publication setupPublication() {
+        final String pub_uri = new ChannelUriStringBuilder()
+                            .reliable(true)
+                            .media("udp")
+                            .endpoint("192.168.0.51:40123")
+                            .build();
+
+        logger.debug("publication URI: {}", pub_uri);
+        return this.aeron.addPublication(pub_uri, streamId);
+    }
+
+    private void runLoop(final Subscription sub, final Publication pub) throws InterruptedException {
+        final UnsafeBuffer buffer = new UnsafeBuffer(BufferUtil.allocateDirectAligned(2048, 16));
+
+        final Random random = new Random();
+
+        final int numBytes = outBuffer.putStringAscii(0, Integer.toUnsignedString(random.nextInt()));
+
+        while (true) {
+            if (pub.isConnected()) {
+                if (matchingEnginePublisher.sendMessage(buffer, pub.toString(), streamId)) {
+                    break;
+                }
+            }
+
+            Thread.sleep(1000L);
+        }
+
+        final FragmentHandler assembler = new FragmentAssembler(SimpleGateway::onParseMessage);
+
+        while (true) {
+            if (pub.isConnected()) {
+                matchingEnginePublisher.sendMessage(buffer, pub.toString(), streamId);
+            }
+            if (sub.isConnected()) {
+                sub.poll(assembler, 10);
+            }
+            Thread.sleep(1000L);
+        }
+    }
+
+    private static void onParseMessage(final DirectBuffer buffer, final int offset, final int length, final Header header) {
+        final byte[] buf = new byte[length];
+        buffer.getBytes(offset, buf);
+        final String response = new String(buf, UTF_8);
+        logger.debug("response: {}", response);
+    }
+
+
+    public static void main(String[] args) throws InterruptedException {
       final AtomicBoolean running = new AtomicBoolean(true);
       SigInt.register(() -> running.set(false));
       final String pubUri = new ChannelUriStringBuilder()
@@ -82,6 +153,7 @@ public final class SimpleGateway implements FragmentHandler, AutoCloseable {
               .media("udp")
               .endpoint("192.168.0.51:40123")
               .build();
+
       try (MediaDriver ignore = BasicMediaDriver.start("/dev/shm/aeron");
            SimpleGateway gw = new SimpleGateway("/dev/shm/aeron", pubUri, args[0], Integer.parseInt(args[1]))) {
           logger.info("Starting gateway...");
