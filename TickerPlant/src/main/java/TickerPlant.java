@@ -21,8 +21,6 @@ import java.net.InetSocketAddress;
 import java.net.URISyntaxException;
 
 public final class TickerPlant implements FragmentHandler, AutoCloseable {
-
-    private static Properties properties;
     private final Aeron aeron;
 
     private Subscriber matchingEngineSubscriber;
@@ -32,7 +30,7 @@ public final class TickerPlant implements FragmentHandler, AutoCloseable {
 
     final TPServer server;
 
-    public TickerPlant(String aeronDirectory, int[] streamIds, String ipAddr) throws URISyntaxException {
+    public TickerPlant(String aeronDirectory, int[] streamIds, String ipAddr) {
         Aeron.Context ctx = new Aeron.Context()
                 .aeronDirectoryName(aeronDirectory)
                 .errorHandler(AeronUtil::printError)
@@ -46,7 +44,7 @@ public final class TickerPlant implements FragmentHandler, AutoCloseable {
                 .reliable(true)
                 .media("udp")
                 .endpoint("224.0.1.1:40456")
-                .networkInterface("192.168.0.201")
+                .networkInterface(ipAddr)
                 .build();
 
         matchingEngineSubscriber = new Subscriber(this.aeron, this);
@@ -56,10 +54,7 @@ public final class TickerPlant implements FragmentHandler, AutoCloseable {
 
         String host = "localhost";
         int port = 8081;
-
         this.server = new TPServer(new InetSocketAddress(host, port));
-        server.start();
-
     }
 
 
@@ -74,6 +69,7 @@ public final class TickerPlant implements FragmentHandler, AutoCloseable {
 
 
     public void start(AtomicBoolean running) {
+        server.start();
         matchingEngineSubscriber.start();
         while (running.get()) {
             Thread.yield();
@@ -133,7 +129,7 @@ public final class TickerPlant implements FragmentHandler, AutoCloseable {
             System.exit(0);
         }
         int[] streamIds = new int[args.length - 1];
-        for (int i = 0; i < streamIds.length - 1; i++) {
+        for (int i = 0; i < streamIds.length; i++) {
             streamIds[i] = Integer.valueOf(args[i + 1]);
         }
 
