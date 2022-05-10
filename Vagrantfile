@@ -48,20 +48,19 @@ Vagrant.configure("2") do |config|
         end
     end
 
-    (1..2).each do |i|
 
-        config.vm.define "gateway#{i}" do |gateway|
-            gateway.vm.hostname = "gateway#{i}"
+    config.vm.define "gateway" do |gateway|
+        gateway.vm.hostname = "gateway"
 
-            gateway.vm.provider :virtualbox do |vb|
-                vb.customize ["modifyvm", :id, "--memory", "1024"]
-                vb.customize ["modifyvm", :id, "--cpus", "2"]
-            end
-
-            gateway.vm.network "private_network", ip: "192.168.0.10#{i}", virtualbox__intnet: "exchange_network", nic_type: "virtio"
-            gateway.vm.provision "shell", path: "scripts/install.sh"
-            gateway.vm.provision "shell", path: "scripts/gateway_setup.sh"
+        gateway.vm.provider :virtualbox do |vb|
+            vb.customize ["modifyvm", :id, "--memory", "1024"]
+            vb.customize ["modifyvm", :id, "--cpus", "2"]
         end
+
+        gateway.vm.network "private_network", ip: "192.168.0.101", virtualbox__intnet: "exchange_network", nic_type: "virtio"
+        gateway.vm.network "forwarded_port", guest: 3000, host: 3000
+        gateway.vm.provision "shell", path: "scripts/install.sh"
+        gateway.vm.provision "shell", path: "scripts/gateway_setup.sh"
     end
 
     config.vm.define "tickerplant" do |tp|
@@ -73,7 +72,7 @@ Vagrant.configure("2") do |config|
         end
 
         tp.vm.network "private_network", ip: "192.168.0.201", virtualbox__intnet: "exchange_network", nic_type: "virtio"
-        fe.vm.network "forwarded_port", guest: 8081, host: 8081
+        tp.vm.network "forwarded_port", guest: 8081, host: 8081
         tp.vm.provision "shell", path: "scripts/install.sh"
     end
 

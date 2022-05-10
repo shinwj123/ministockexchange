@@ -4,7 +4,7 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.List;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
 import quickfix.Application;
 import quickfix.DoNotSend;
 import quickfix.FieldNotFound;
