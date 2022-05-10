@@ -27,15 +27,11 @@ public class websocketTest {
         while(running.get()) {
             server.broadcast(message + counter);
             counter++;
-            Thread.sleep(1000);
-
+            Thread.sleep(2000);
 
         }
         server.stop();
         System.out.println("shutting down");
-
-
-
 
     }
 }

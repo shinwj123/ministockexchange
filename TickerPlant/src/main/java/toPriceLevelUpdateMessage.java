@@ -1,15 +1,7 @@
-import java.math.BigDecimal;
 import java.util.Arrays;
 import java.util.Objects;
 
 public class toPriceLevelUpdateMessage {
-
-    private static byte eventProcessing = (byte) 0x0;
-    private static byte eventComplete = (byte) 0x1;
-    private static byte buyUpdateTag = (byte) 0x38;
-    private static byte sellUpdateTag = (byte) 0x35;
-
-    public static final int LENGTH = 30;
 
     private final String messageType;
     private final String eventFlag; // means the order in the message is still processed, true means order processing completed

@@ -1,9 +1,10 @@
 import java.util.Comparator;
+import java.util.Formatter;
 import java.util.List;
 
 import static java.lang.Integer.MAX_VALUE;
 
-public class OrderBookTP implements OrderBook {
+public class OrderBookTP {
     private final String stockSymbol;
 
     public final BookSide bidSide;
@@ -91,22 +92,22 @@ public class OrderBookTP implements OrderBook {
         return toReturn;
     }
 
-    @Override
+
     public String getStockSymbols() {
         return stockSymbol;
     }
 
-    @Override
+
     public List<PriceLevel> getAllBidLevels() {
         return bidSide.getLevels();
     }
 
-    @Override
+
     public List<PriceLevel> getAllAskLevels() {
         return askSide.getLevels();
     }
 
-    @Override
+
     public PriceLevel getBestBidLevel() {
         if (bidSide.bookSideTree.isEmpty()) {
             StockPrice price = new StockPrice(0);
@@ -118,7 +119,7 @@ public class OrderBookTP implements OrderBook {
 
     }
 
-    @Override
+
     public PriceLevel getBestAskLevel() {
         if (askSide.bookSideTree.isEmpty()) {
             StockPrice price = new StockPrice(MAX_VALUE);
@@ -129,10 +130,18 @@ public class OrderBookTP implements OrderBook {
         }
     }
 
-    @Override
-    public String toString() {
-       //print the entire order book
-        return "";
+    public void printOrderBook() {
+        Formatter formatter = new Formatter();
+        formatter.format("%12s %12s\n", " ", stockSymbol);
+        formatter.format("%12s %12s %12s\n", "BID", "Price", "ASK");
+        for (PriceLevel level : askSide.bookSideTree.descendingMap().values()) {
+            formatter.format("%12s %12s %12d\n", " ", level.printPrice(), level.getSize());
+        }
+        formatter.format("%s\n", "-".repeat(50));
+        for (PriceLevel level : bidSide.bookSideTree.values()) {
+            formatter.format("%12d %12s %12s\n", level.getSize(), level.printPrice(), " ");
+        }
+        System.out.println(formatter);
     }
 
 }

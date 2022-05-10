@@ -3,41 +3,22 @@ import io.aeron.ChannelUriStringBuilder;
 import io.aeron.driver.MediaDriver;
 import io.aeron.logbuffer.FragmentHandler;
 import io.aeron.logbuffer.Header;
-import org.agrona.BufferUtil;
+
 import org.agrona.CloseHelper;
 import org.agrona.DirectBuffer;
-import org.agrona.collections.Int2ObjectHashMap;
 import org.agrona.collections.Object2ObjectHashMap;
 import org.agrona.concurrent.SigInt;
-import org.agrona.concurrent.SystemEpochNanoClock;
 import org.agrona.concurrent.UnsafeBuffer;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
-import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.InputStreamReader;
 import java.net.InetAddress;
-import java.nio.charset.StandardCharsets;
-import java.util.ArrayList;
 import java.util.Properties;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.net.InetSocketAddress;
-import java.net.URI;
 import java.net.URISyntaxException;
-import java.nio.ByteBuffer;
-
-import org.java_websocket.WebSocket;
-import org.java_websocket.handshake.ClientHandshake;
-import org.java_websocket.server.WebSocketServer;
-
-
-import org.java_websocket.client.WebSocketClient;
-import org.java_websocket.drafts.Draft;
-import org.java_websocket.drafts.Draft_6455;
-import org.java_websocket.handshake.ServerHandshake;
-
 
 public final class TickerPlant implements FragmentHandler, AutoCloseable {
 
@@ -52,11 +33,6 @@ public final class TickerPlant implements FragmentHandler, AutoCloseable {
     final TPServer server;
 
     public TickerPlant(String aeronDirectory, int[] streamIds, String ipAddr) throws URISyntaxException {
-        try {
-            loadProperties("TickerPlant.properties");
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
         Aeron.Context ctx = new Aeron.Context()
                 .aeronDirectoryName(aeronDirectory)
                 .errorHandler(AeronUtil::printError)
@@ -69,7 +45,8 @@ public final class TickerPlant implements FragmentHandler, AutoCloseable {
         final String matchingEngineUri = new ChannelUriStringBuilder()
                 .reliable(true)
                 .media("udp")
-                .endpoint(String.format("%s:40123", ipAddr))
+                .endpoint("224.0.1.1:40456")
+                .networkInterface("192.168.0.201")
                 .build();
 
         matchingEngineSubscriber = new Subscriber(this.aeron, this);
@@ -78,7 +55,7 @@ public final class TickerPlant implements FragmentHandler, AutoCloseable {
         }
 
         String host = "localhost";
-        int port = 8080;
+        int port = 8081;
 
         this.server = new TPServer(new InetSocketAddress(host, port));
         server.start();
@@ -86,16 +63,6 @@ public final class TickerPlant implements FragmentHandler, AutoCloseable {
     }
 
 
-    private static void loadProperties(String propertiesFile) throws IOException {
-        try(InputStream inputStream = TickerPlant.class.getClassLoader().getResourceAsStream(propertiesFile)) {
-            if (inputStream != null) {
-                properties = new Properties();
-                properties.load(inputStream);
-            } else {
-                throw new IOException("Unable to load properties file " + propertiesFile);
-            }
-        }
-    }
 
     @Override
     public void onFragment(DirectBuffer buffer, int offset, int length, Header header) {
@@ -122,13 +89,8 @@ public final class TickerPlant implements FragmentHandler, AutoCloseable {
     }
 
     public void process(UnsafeBuffer report) {
-        // check if the symbol is traded on the current ME before call process
-        // try match immediately
-
         byte buyUpdateTag = (byte) 0x38;
         byte sellUpdateTag = (byte) 0x35;
-        byte eventProcessing = (byte) 0x0;
-        byte eventComplete = (byte) 0x1;
 
         String symbol = Report.getSymbol(report);
 
@@ -145,17 +107,19 @@ public final class TickerPlant implements FragmentHandler, AutoCloseable {
             orderBooks.put(symbol, toUpdate);
         }
 
-        PriceLevel previousLevel = toUpdate.bidSide.getSpecificLevel(stockPrice);
+        PriceLevel previousLevel;
         if (side == sellUpdateTag) {
             previousLevel = toUpdate.askSide.getSpecificLevel(stockPrice);
+        } else if (side == buyUpdateTag){
+            previousLevel = toUpdate.bidSide.getSpecificLevel(stockPrice);
+        } else {
+            throw new IllegalArgumentException("unknowed side for the book update");
         }
 
         toUpdate.priceLevelUpdate(symbol, stockPrice, deltaQuantity, side, previousLevel) ;
 
         server.broadcast(Report.toJson(report).toString());
     }
-
-
 
     public static void main(String[] args) throws Exception {
         if (args.length != 2) {

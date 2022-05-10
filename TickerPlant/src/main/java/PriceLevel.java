@@ -1,3 +1,5 @@
+import java.math.BigDecimal;
+import java.text.NumberFormat;
 import java.util.Objects;
 
 public class PriceLevel {
@@ -55,12 +57,16 @@ public class PriceLevel {
         return Objects.hash(stockSymbol, timeStamp, stockPrice, size);
     }
 
+    public String printPrice() {
+        return NumberFormat.getCurrencyInstance().format(BigDecimal.valueOf(stockPrice.getNumber()).scaleByPowerOfTen(-4));
+    }
+
     @Override
     public String toString() {
         return "PriceLevel{" +
                 "symbol='" + stockSymbol + '\'' +
                 ", timestamp=" + timeStamp +
-                ", price=" + stockPrice +
+                ", price=" + stockPrice.toString() +
                 ", size=" + size +
                 '}';
     }

@@ -1,8 +1,6 @@
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
-import java.text.SimpleDateFormat;
-import java.util.Date;
 import java.util.List;
 import java.util.Objects;
 
@@ -15,16 +13,13 @@ class OrderBookTPTest {
     public void byteCodeMessageTranslateCorrectly() {
         //this test uses example bytecode from IEX documentation directly to perform the test
         StockPrice price = new StockPrice(17532L);
-        String timeStamp = new SimpleDateFormat("2016.08.23.15.30.ss").format(new Date());
         PriceLevel sample = new PriceLevel("AAPL", 14875433212L, price, 100);
         byte[] priceLevelUpdateMessageByte = BookSide.IEXPriceLevelUpdateMessage(true, sample, false);
-
 
         StringBuilder sb = new StringBuilder();
         for (byte b : priceLevelUpdateMessageByte) {
             sb.append(String.format("%02X ", b));
         }
-
 
         toPriceLevelUpdateMessage fromByte = new toPriceLevelUpdateMessage(priceLevelUpdateMessageByte);
         String message = fromByte.toString();
@@ -117,7 +112,6 @@ class OrderBookTPTest {
         Assertions.assertTrue(testBook.getAllBidLevels().get(0).getSize() == testMessage1.getSize() + testMessage2.getSize());
 
     }
-
 
     @Test
     public void shouldUpdateAskPriceLevel() {
@@ -248,7 +242,6 @@ class OrderBookTPTest {
                 testBook.getAllAskLevels().isEmpty());
     }
 
-
     @Test
     public void shouldSuccessfullyReturnBestAsk() {
         final MessageFromME testMessage1 = new MessageFromME(
@@ -275,11 +268,111 @@ class OrderBookTPTest {
 
         testBook.priceLevelUpdate(testMessage2);
 
-        final PriceLevel bestBid= testBook.getBestAskLevel();
-        Assertions.assertTrue(bestBid.getStockPrice().getNumber() == testMessage1.getPrice() &&
+        final PriceLevel bestAsk= testBook.getBestAskLevel();
+        Assertions.assertTrue(bestAsk.getStockPrice().getNumber() == testMessage1.getPrice() &&
                 testBook.getAllBidLevels().isEmpty());
     }
 
-    //edge case -- what if no price level in bid or ask
+    @Test
+    public void shouldRecreateIEXExample() {
+
+        String symbol = "ZIEXT";
+        final MessageFromME testMessage1 = new MessageFromME(
+                225,
+                0,
+                123456789L,
+                symbol,
+                100,
+                253000L,
+                0);
+
+
+        final MessageFromME testMessage2 = new MessageFromME(
+                225,
+                0,
+                123456789L,
+                symbol,
+                100,
+                252000L,
+                0);
+
+        final MessageFromME testMessage3 = new MessageFromME(
+                225,
+                0,
+                123456789L,
+                symbol,
+                100,
+                251000L,
+                0);
+        final MessageFromME testMessage4 = new MessageFromME(
+                225,
+                0,
+                123456789L,
+                symbol,
+                100,
+                250000L,
+                1);
+
+        final MessageFromME testMessage5 = new MessageFromME(
+                225,
+                0,
+                123456789L,
+                symbol,
+                100,
+                249000L,
+                1);
+        final OrderBookTP testBook = new OrderBookTP(symbol);
+
+        testBook.priceLevelUpdate(testMessage1);
+        testBook.priceLevelUpdate(testMessage2);
+        testBook.priceLevelUpdate(testMessage3);
+        testBook.priceLevelUpdate(testMessage4);
+        testBook.priceLevelUpdate(testMessage5);
+
+        PriceLevel bestBid= testBook.getBestBidLevel();
+        PriceLevel bestAsk= testBook.getBestAskLevel();
+        Assertions.assertTrue(bestBid.getStockPrice().getNumber() == testMessage4.getPrice() &&
+                bestAsk.getStockPrice().getNumber() == testMessage3.getPrice());
+
+        testBook.printOrderBook();
+
+        final MessageFromME testMessage6 = new MessageFromME(
+                225,
+                1,
+                123456789L,
+                symbol,
+                100,
+                251000L,
+                0);
+
+        testBook.priceLevelUpdate(testMessage6);
+
+        bestBid= testBook.getBestBidLevel();
+        bestAsk= testBook.getBestAskLevel();
+
+        testBook.printOrderBook();
+
+        Assertions.assertTrue(bestBid.getStockPrice().getNumber() == testMessage4.getPrice() &&
+                bestAsk.getStockPrice().getNumber() == testMessage2.getPrice());
+
+        final MessageFromME testMessage7 = new MessageFromME(
+                225,
+                1,
+                123456789L,
+                symbol,
+                100,
+                252000L,
+                0);
+
+        testBook.priceLevelUpdate(testMessage7);
+
+        bestBid= testBook.getBestBidLevel();
+        bestAsk= testBook.getBestAskLevel();
+
+        testBook.printOrderBook();
+
+        Assertions.assertTrue(bestBid.getStockPrice().getNumber() == testMessage4.getPrice() &&
+                bestAsk.getStockPrice().getNumber() == testMessage1.getPrice());
+    }
 
 }
