@@ -7,7 +7,7 @@ import quickfix.*;
 public class GatewayApp {
     public static void main(String[] args) throws ConfigError, FieldConvertError {
 
-        SessionSettings settings = new SessionSettings("./conf/gateway.cfg");
+        SessionSettings settings = new SessionSettings("conf/gateway.cfg");
 
         Application gatewayApplication = new Gateway(settings);
         FileStoreFactory fileStoreFactory = new FileStoreFactory(settings);
