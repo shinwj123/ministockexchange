@@ -77,7 +77,7 @@ public class Gateway extends MessageCracker implements Application {
     }
 
     private String reformatFIXMessage(Message message) {
-        return message.toString().replaceAll("\1", "1");
+        return message.toString().replace((char) 1, '|');
     }
 
     @Override
