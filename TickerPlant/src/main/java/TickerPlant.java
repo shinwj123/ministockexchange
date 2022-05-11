@@ -3,7 +3,6 @@ import io.aeron.ChannelUriStringBuilder;
 import io.aeron.driver.MediaDriver;
 import io.aeron.logbuffer.FragmentHandler;
 import io.aeron.logbuffer.Header;
-
 import org.agrona.CloseHelper;
 import org.agrona.DirectBuffer;
 import org.agrona.collections.Object2ObjectHashMap;
@@ -12,13 +11,9 @@ import org.agrona.concurrent.UnsafeBuffer;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
-import java.io.IOException;
-import java.io.InputStream;
 import java.net.InetAddress;
-import java.util.Properties;
-import java.util.concurrent.atomic.AtomicBoolean;
 import java.net.InetSocketAddress;
-import java.net.URISyntaxException;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 public final class TickerPlant implements FragmentHandler, AutoCloseable {
     private final Aeron aeron;
@@ -48,20 +43,19 @@ public final class TickerPlant implements FragmentHandler, AutoCloseable {
                 .build();
 
         matchingEngineSubscriber = new Subscriber(this.aeron, this);
-        for (int i = 0; i < streamIds.length; i++) {
-            matchingEngineSubscriber.addSubscription(matchingEngineUri, streamIds[i]);
+        for (int streamId : streamIds) {
+            matchingEngineSubscriber.addSubscription(matchingEngineUri, streamId);
         }
 
-        String host = "localhost";
         int port = 8081;
-        this.server = new TPServer(new InetSocketAddress(host, port));
+        this.server = new TPServer(new InetSocketAddress(ipAddr, port));
     }
 
 
 
     @Override
     public void onFragment(DirectBuffer buffer, int offset, int length, Header header) {
-        final int session = header.sessionId(); // sessionId identifies which gateway is the sender
+        final int session = header.sessionId();
         UnsafeBuffer data = new UnsafeBuffer(buffer, offset, length);
         process(data);
 
@@ -78,9 +72,10 @@ public final class TickerPlant implements FragmentHandler, AutoCloseable {
     }
 
     @Override
-    public void close() {
+    public void close() throws InterruptedException {
         logger.info("Shutting down TickerPlant...");
         matchingEngineSubscriber.stop();
+        server.stop();
         CloseHelper.close(aeron);
     }
 
@@ -109,28 +104,29 @@ public final class TickerPlant implements FragmentHandler, AutoCloseable {
         } else if (side == buyUpdateTag){
             previousLevel = toUpdate.bidSide.getSpecificLevel(stockPrice);
         } else {
-            throw new IllegalArgumentException("unknowed side for the book update");
+            throw new IllegalArgumentException("unknown side for the book update");
         }
 
-        toUpdate.priceLevelUpdate(symbol, stockPrice, deltaQuantity, side, previousLevel) ;
+        toUpdate.priceLevelUpdate(symbol, stockPrice, deltaQuantity, side, previousLevel);
 
         server.broadcast(Report.toJson(report).toString());
     }
 
     public static void main(String[] args) throws Exception {
-        if (args.length != 2) {
+        if (args.length < 2) {
             System.out.println(
-                    "Command line usage: java -jar TickerPlant/target/TickerPlant-1.0-SNAPSHOT-jar-with-dependencies.jar [local ip address] [streamId]");
+                    "Command line usage: java -jar TickerPlant/target/TickerPlant-1.0-SNAPSHOT-jar-with-dependencies.jar [local ip address] [streamId for ME1] [streamId for ME2] ...");
             System.exit(0);
         }
 
-        if (Integer.parseInt(args[1]) < 1) {
-            System.out.println("StreamId must be greater or equal to 1");
-            System.exit(0);
-        }
         int[] streamIds = new int[args.length - 1];
         for (int i = 0; i < streamIds.length; i++) {
-            streamIds[i] = Integer.valueOf(args[i + 1]);
+            int streamId = Integer.parseInt(args[i + 1]);
+            streamIds[i] = streamId;
+            if (streamId < 1) {
+                System.out.println("StreamId must be greater or equal to 1");
+                System.exit(0);
+            }
         }
 
         final InetAddress ipAddr = InetAddress.getByName(args[0]);
@@ -140,8 +136,8 @@ public final class TickerPlant implements FragmentHandler, AutoCloseable {
 
         try (MediaDriver ignore = BasicMediaDriver.start("/dev/shm/aeron");
              TickerPlant TP = new TickerPlant("/dev/shm/aeron", streamIds, args[0])) {
-            for (int i = 0; i < streamIds.length; i++) {
-                logger.info("Starting TickerPlant at " + ipAddr.toString() + "streamId=" + streamIds[i]);
+            for (int streamId : streamIds) {
+                logger.info("Starting TickerPlant at " + ipAddr.toString() + "streamId=" + streamId);
             }
 
             TP.start(running);

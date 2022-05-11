@@ -3,7 +3,7 @@ import org.junit.jupiter.api.Test;
 
 import java.util.Objects;
 
-class toPriceLevelUpdateMessageTest {
+class PriceLevelUpdateMessageTest {
 
     @Test
     public void successfullyCreatePriceLevelUpdateMessageInstance() {
@@ -13,7 +13,7 @@ class toPriceLevelUpdateMessageTest {
         final int size = 250;
 
         PriceLevel priceLevel = new PriceLevel(symbol, timestamp, price, size);
-        byte[] messageByte = OrderBookTP.IEXPriceLevelUpdateMessage(true, priceLevel, true);
+        byte[] messageByte = BookSide.IEXPriceLevelUpdateMessage(true, priceLevel, true);
 
         toPriceLevelUpdateMessage testingMessage = new toPriceLevelUpdateMessage(messageByte);
         Assertions.assertTrue(Objects.equals(testingMessage.getMessageType(), "PRICE_LEVEL_UPDATE_BUY") &&

@@ -14,9 +14,7 @@ public class BookSide {
 
     void priceLevelUpdateFromMessage(final MessageFromME messageFromME) {
         StockPrice priceKey = new StockPrice(messageFromME.getPrice());
-
         //if add size to a price level
-
         PriceLevel previousLevel = getSpecificLevel(priceKey);
         if (previousLevel == null) {
             previousLevel = toPriceLevel(messageFromME, 0);
@@ -26,14 +24,13 @@ public class BookSide {
         if (messageFromME.getSide() == 1) {
             preProcessingMessage = IEXPriceLevelUpdateMessage(false, previousLevel, true);
         }
-        //find a way to send out the message using market data publoisher class
+        //find a way to send out the message using market data publisher class
 
         long currentSize = previousLevel.getSize();
         long newSize = currentSize + messageFromME.getSize();
         if (messageFromME.getOrderStatus() != 0) {
             newSize = currentSize - messageFromME.getSize();
         }
-
 
         PriceLevel newLevel = toPriceLevel(messageFromME, newSize);
         if (newSize > 0) {
@@ -54,11 +51,8 @@ public class BookSide {
 
     void priceLevelUpdateFromMessage(String symbol, StockPrice stockPrice, long deltaQuantity, byte side, PriceLevel previousLevel) {
         //if add size to a price level
-
         long currentSize = previousLevel.getSize();
         long newSize = currentSize + deltaQuantity;
-
-
 
         PriceLevel newLevel = toPriceLevel(symbol, stockPrice, newSize);
         if (newSize > 0) {
@@ -71,7 +65,7 @@ public class BookSide {
 
     public static byte[] IEXPriceLevelUpdateMessage(boolean buySide,
                                                     PriceLevel priceLevel,
-                                                    boolean Processing) {
+                                                    boolean processing) {
         byte buyUpdateTag = (byte) 0x38;
         byte sellUpdateTag = (byte) 0x35;
         byte eventProcessing = (byte) 0x0;
@@ -85,7 +79,7 @@ public class BookSide {
             eventFlag = sellUpdateTag;
         }
         byte messageType = eventProcessing;
-        if (Processing) {
+        if (processing) {
             messageType = eventProcessing;
         } else {
             messageType = eventComplete;
@@ -147,6 +141,4 @@ public class BookSide {
                 newSize
         );
     }
-
-
 }
