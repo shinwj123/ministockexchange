@@ -63,17 +63,17 @@ public class Gateway extends MessageCracker implements Application {
 
     @Override
     public void toAdmin(Message message, SessionID sessionId) {
-        System.out.println("Admin >> " + message);
+        System.out.println("Admin >> " + reformatFIXMessage(message));
     }
 
     @Override
     public void fromAdmin(Message message, SessionID sessionId) {
-        System.out.println("Admin << " + message);
+        System.out.println("Admin << " + reformatFIXMessage(message));
     }
 
     @Override
     public void toApp(Message message, SessionID sessionId) {
-        System.out.println("Gateway Order Reception : " + message);
+        System.out.println("Gateway Order Reception : " + reformatFIXMessage(message));
     }
 
     private String reformatFIXMessage(Message message) {
