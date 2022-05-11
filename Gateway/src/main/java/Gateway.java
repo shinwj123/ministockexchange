@@ -52,28 +52,28 @@ public class Gateway extends MessageCracker implements Application {
     @Override
     public void onLogon(SessionID sessionId) {
         sessionActiveOrders.put(sessionId, new HashSet<>());
-        System.out.println("Gateway onLogon.." + sessionId);
+        System.out.println("Gateway onLogon " + sessionId);
     }
 
     @Override
     public void onLogout(SessionID sessionId) {
         sessionActiveOrders.remove(sessionId);
-        System.out.println("Gateway Logout.." + sessionId);
+        System.out.println("Gateway Logout " + sessionId);
     }
 
     @Override
     public void toAdmin(Message message, SessionID sessionId) {
-        System.out.println("Admin >> " + reformatFIXMessage(message));
+        System.out.println("Admin >> " + message);
     }
 
     @Override
     public void fromAdmin(Message message, SessionID sessionId) {
-        System.out.println("Admin << " + reformatFIXMessage(message));
+        System.out.println("Admin << " + message);
     }
 
     @Override
     public void toApp(Message message, SessionID sessionId) {
-        System.out.println("Gateway Order Reception : " + reformatFIXMessage(message));
+        System.out.println("Gateway Order Reception : " + message);
     }
 
     private String reformatFIXMessage(Message message) {
