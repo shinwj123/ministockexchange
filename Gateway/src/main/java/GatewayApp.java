@@ -1,5 +1,7 @@
 import java.util.Scanner;
+import java.util.concurrent.atomic.AtomicBoolean;
 
+import org.agrona.concurrent.SigInt;
 import quickfix.*;
 
 public class GatewayApp {
@@ -17,10 +19,10 @@ public class GatewayApp {
 
         socketAcceptor.start();
 
-        Scanner scanner = new Scanner(System.in);
-        System.out.println("press <enter> to quit");
-        scanner.nextLine();
-
+        final AtomicBoolean running = new AtomicBoolean(true);
+        SigInt.register(() -> running.set(false));
+        System.out.println("press ctrl-c to quit");
+        while (running.get());
         socketAcceptor.stop();
     }
 

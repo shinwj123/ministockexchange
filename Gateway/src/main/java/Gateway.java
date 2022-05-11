@@ -3,7 +3,9 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicLong;
 
+import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import quickfix.Application;
 import quickfix.DoNotSend;
@@ -31,126 +33,81 @@ import quickfix.fix42.OrderCancelRequest;
 public class Gateway extends MessageCracker implements Application {
 
     private static final String VALID_ORDER_TYPES_KEY = "ValidOrderTypes";
-
-    private Map<String, Double> priceMap = null;
-    private Map<SessionID, ClOrdID> sessionMap = null;
+    private static final AtomicLong execIdGenerator = new AtomicLong();
+    private final Map<SessionID, HashSet<ClOrdID>> sessionActiveOrders;
     private final HashSet<String> validOrderTypes = new HashSet<>();
-//    private final Logger log = Logger.getLogger(getClass());
+    private static final Logger logger = LogManager.getLogger(Gateway.class);
 
 
-
-    public Gateway(SessionSettings settings) throws ConfigError, FieldConvertError {
+    public Gateway(SessionSettings settings) throws ConfigError {
         initializeValidOrderTypes(settings);
-
-        priceMap = new HashMap<String, Double>();
-        priceMap.put("AAPL", 150.0);
-        priceMap.put("NVDA", 200.25);
-        priceMap.put("TSLA", 850.33);
-        priceMap.put("AMZN", 2750.0);
-
-        sessionMap = new HashMap<SessionID, ClOrdID>();
-
-
+        sessionActiveOrders = new HashMap<>();
     }
 
     @Override
     public void onCreate(SessionID sessionId) {
-        System.out.println("Gateway Session Created with SessionID = "
-                + sessionId);
+        System.out.println("Gateway Session Created with SessionID = " + sessionId);
     }
 
     @Override
     public void onLogon(SessionID sessionId) {
+        sessionActiveOrders.put(sessionId, new HashSet<>());
         System.out.println("Gateway onLogon.." + sessionId);
     }
 
     @Override
     public void onLogout(SessionID sessionId) {
+        sessionActiveOrders.remove(sessionId);
         System.out.println("Gateway Logout.." + sessionId);
     }
 
     @Override
     public void toAdmin(Message message, SessionID sessionId) {
-
+        System.out.println("Admin >> " + message);
     }
 
     @Override
-    public void fromAdmin(Message message, SessionID sessionId)
-            throws FieldNotFound, IncorrectDataFormat, IncorrectTagValue, RejectLogon {
-
+    public void fromAdmin(Message message, SessionID sessionId) {
+        System.out.println("Admin << " + message);
     }
 
     @Override
-    public void toApp(Message message, SessionID sessionId) throws DoNotSend {
+    public void toApp(Message message, SessionID sessionId) {
         System.out.println("Gateway Order Reception : " + message.toString());
     }
 
     @Override
     public void fromApp(Message message, SessionID sessionId)
-            throws FieldNotFound, IncorrectDataFormat, IncorrectTagValue,
+            throws FieldNotFound, IncorrectTagValue,
             UnsupportedMessageType {
         crack(message, sessionId);
     }
 
-    private Price getPrice(Message message, Symbol tickerSymbol) throws FieldNotFound {
-        Price price = null;
-        if (message.toString().contains("Cancel My Order!")) {
-            price = new Price(this.priceMap.get(tickerSymbol.getValue()));
-        } else {
-            if (message.getChar(OrdType.FIELD) == OrdType.LIMIT) {
-                price = new Price(this.priceMap.get(tickerSymbol.getValue()));
-            } else if (message.getChar(OrdType.FIELD) == OrdType.MARKET) {
-                price = new Price(this.priceMap.get(tickerSymbol.getValue()));
-            } else if (message.toString().contains("Cancel")) {
-                price = new Price(this.priceMap.get(tickerSymbol.getValue()));
-            } else {
-                char side = message.getChar(Side.FIELD);
-                //            if (side == Side.BUY) {
-                //                price = new Price(marketDataProvider.getAsk(message.getString(Symbol.FIELD)));
-                //            } else if (side == Side.SELL) {
-                //                price = new Price(marketDataProvider.getBid(message.getString(Symbol.FIELD)));
-                //            } else {
-                if (side != Side.BUY || side != Side.SELL) {
-                    throw new RuntimeException("Invalid order side: " + side);
-                }
-            }
-        }
-        return price;
-    }
-
-
     public void onMessage(NewOrderSingle message, SessionID sessionID)
-            throws FieldNotFound, UnsupportedMessageType, IncorrectTagValue {
-//        OrdType ordType = new OrdType(message.getChar(OrdType.FIELD));
-//        System.out.println(ordType);
+            throws FieldNotFound, IncorrectTagValue {
+        OrdType ordType = new OrdType(message.getChar(OrdType.FIELD));
         validateOrder(message);
 
-        String clOrdID = message.getClOrdID().getValue();
-        OrderID orderNumber = new OrderID(clOrdID);
+        ClOrdID clOrdID = message.getClOrdID();
+        OrderID orderNumber = new OrderID(clOrdID.getValue());
 
         OrdType orderType = message.getOrdType();
         Symbol tickerSymbol = message.getSymbol();
 
-        Price price = getPrice(message, tickerSymbol);
-
         ExecID execId = new ExecID("1");
-        ExecTransType exectutionTransactioType = new ExecTransType(ExecTransType.NEW);
+        ExecTransType execTransactionType = new ExecTransType(ExecTransType.NEW);
         ExecType purposeOfExecutionReport =new ExecType(ExecType.FILL);
         OrdStatus orderStatus = new OrdStatus(OrdStatus.NEW);
-        Symbol symbol = tickerSymbol;
         Side side = message.getSide();
         LeavesQty leavesQty = new LeavesQty(100);
-        CumQty cummulativeQuantity = new CumQty(100);
-        AvgPx avgPx = new AvgPx(this.priceMap.get(tickerSymbol.getValue()));
+        CumQty cumQuantity = new CumQty(100);
+        AvgPx avgPx = new AvgPx(message.getPrice().getValue());
 
-        sessionMap.put(sessionID, message.getClOrdID());
+        sessionActiveOrders.get(sessionID).add(clOrdID);
 
-        ExecutionReport executionReport = new ExecutionReport(orderNumber,execId, exectutionTransactioType,
-                purposeOfExecutionReport, orderStatus, symbol, side, leavesQty, cummulativeQuantity, avgPx);
-        executionReport.set(price);
+        ExecutionReport executionReport = new ExecutionReport(orderNumber,execId, execTransactionType,
+                purposeOfExecutionReport, orderStatus, tickerSymbol, side, leavesQty, cumQuantity, avgPx);
         executionReport.set(orderType);
-
-        System.out.println(executionReport);
 
         try {
             Session.sendToTarget(executionReport, sessionID);
@@ -160,39 +117,27 @@ public class Gateway extends MessageCracker implements Application {
     }
 
     public void onMessage(OrderCancelRequest cancelRequest, SessionID sessionID)
-            throws FieldNotFound, UnsupportedMessageType, IncorrectTagValue {
-//        System.out.println(sessionMap);
-        validateCancelRequest(cancelRequest, sessionID);
-//        System.out.println(sessionMap);
-
+            throws FieldNotFound {
         String clOrdID = cancelRequest.getClOrdID().getValue();
-        OrderID orderNumber = new OrderID(clOrdID);
+        OrderID orderNumber = new OrderID(clOrdID); // TODO: ME sets this
 
         Symbol tickerSymbol = cancelRequest.getSymbol();
-//
-//        Price price = null;
-//        if(this.priceMap.containsKey(tickerSymbol.getValue())) {
-//            price = new Price(this.priceMap.get(tickerSymbol.getValue()));
-//        }
-        Price price = getPrice(cancelRequest, tickerSymbol);
-
-        ExecID execId = new ExecID("2");
-        ExecTransType exectutionTransactioType = new ExecTransType(ExecTransType.CANCEL);
+        ExecID execId = new ExecID(Long.toString(execIdGenerator.incrementAndGet()));
+        ExecTransType execTransactionType = new ExecTransType(ExecTransType.CANCEL);
         ExecType purposeOfExecutionReport =new ExecType(ExecType.CANCELED);
         OrdStatus orderStatus = new OrdStatus(OrdStatus.CANCELED);
-        Symbol symbol = tickerSymbol;
         Side side = cancelRequest.getSide();
         LeavesQty leavesQty = new LeavesQty(0);
-        CumQty cummulativeQuantity = new CumQty(0);
-        AvgPx avgPx = new AvgPx(this.priceMap.get(tickerSymbol.getValue()));
+        CumQty cumQuantity = new CumQty(0);
+        AvgPx avgPx = new AvgPx(0);
 
-        ExecutionReport executionReport = new ExecutionReport(orderNumber,execId, exectutionTransactioType,
-                purposeOfExecutionReport, orderStatus, symbol, side, leavesQty, cummulativeQuantity, avgPx);
+        if (!validateCancelRequest(cancelRequest, sessionID)) {
+            execTransactionType = new ExecTransType(ExecType.REJECTED);
+            orderStatus = new OrdStatus(ExecType.REJECTED);
+        }
 
-        executionReport.set(price);
-//        executionReport.set(orderType);
-
-        System.out.println(executionReport);
+        ExecutionReport executionReport = new ExecutionReport(orderNumber, execId, execTransactionType,
+                purposeOfExecutionReport, orderStatus, tickerSymbol, side, leavesQty, cumQuantity, avgPx);
 
         try {
             Session.sendToTarget(executionReport, sessionID);
@@ -201,7 +146,7 @@ public class Gateway extends MessageCracker implements Application {
         }
     }
 
-    private void initializeValidOrderTypes(SessionSettings settings) throws ConfigError, FieldConvertError {
+    private void initializeValidOrderTypes(SessionSettings settings) throws ConfigError {
         if (settings.isSetting(VALID_ORDER_TYPES_KEY)) {
             List<String> orderTypes = Arrays.asList(settings.getString(VALID_ORDER_TYPES_KEY).trim().split("\\s*,\\s*"));
             validOrderTypes.addAll(orderTypes);
@@ -223,23 +168,14 @@ public class Gateway extends MessageCracker implements Application {
 //        }
     }
 
-    private void validateCancelRequest(OrderCancelRequest cancelRequest, SessionID sessionID) throws FieldNotFound {
-        for (Map.Entry<SessionID,ClOrdID> entry : sessionMap.entrySet()) {
-            if (!(entry.getKey().toString().contains(sessionID.toString()))) {
-                throw new RuntimeException("Not existing Session id");
-            } else if (!(entry.getValue().toString().contains(cancelRequest.getOrigClOrdID().getValue())))  {
-                throw new RuntimeException("Not existing Original client order id");
-            }
-        }
-
+    private boolean validateCancelRequest(OrderCancelRequest cancelRequest, SessionID sessionID) throws FieldNotFound {
         String origClOrdID = cancelRequest.getOrigClOrdID().getValue();
         ClOrdID removeClOrdID = new ClOrdID(origClOrdID);
-//        System.out.println(removeClOrdID);
-        sessionMap.remove(sessionID, removeClOrdID);
-        
+
+        if (sessionActiveOrders.containsKey(sessionID)) {
+            return sessionActiveOrders.get(sessionID).remove(removeClOrdID);
+        }
+        return false;
     }
-
-
-
-} //public class Gateway
+}
 
