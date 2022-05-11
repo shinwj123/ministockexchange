@@ -1,6 +1,4 @@
-import java.util.Scanner;
 import java.util.concurrent.atomic.AtomicBoolean;
-
 import org.agrona.concurrent.SigInt;
 import quickfix.*;
 
@@ -24,6 +22,7 @@ public class GatewayApp {
         System.out.println("press ctrl-c to quit");
         while (running.get());
         socketAcceptor.stop();
+        System.out.println("Shutting down FIX gateway...");
     }
 
 }
