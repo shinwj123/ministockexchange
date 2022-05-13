@@ -168,10 +168,6 @@ public class Order {
         }
     }
 
-    public String printPrice() {
-        return NumberFormat.getCurrencyInstance().format(BigDecimal.valueOf(price).scaleByPowerOfTen(-4));
-    }
-
     public static String getPriceString(long price) {
         return NumberFormat.getCurrencyInstance().format(BigDecimal.valueOf(price).scaleByPowerOfTen(-4));
     }
