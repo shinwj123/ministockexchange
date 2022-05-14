@@ -235,6 +235,7 @@ public class Gateway extends MessageCracker implements Application, FragmentHand
     public void onFragment(DirectBuffer buffer, int offset, int length, Header header) {
         final int session = header.sessionId();
         UnsafeBuffer data = new UnsafeBuffer(buffer, offset, length);
+        logger.debug("Received from ME: " + Report.getTimestamp(data));
 
         String clientCompId = Report.getClientCompId(data);
         Symbol symbol = new Symbol(Report.getSymbol(data));
