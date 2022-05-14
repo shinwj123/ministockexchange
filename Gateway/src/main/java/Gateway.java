@@ -97,6 +97,7 @@ public class Gateway extends MessageCracker implements Application, FragmentHand
     public void onLogon(SessionID sessionId) {
         sessionActiveOrders.put(sessionId, new HashMap<Long, Long>());
         clientCompId2sessionId.put(sessionId.getSenderCompID(), sessionId);
+        logger.debug(sessionId.getSenderCompID());
         System.out.println("Gateway onLogon " + sessionId);
     }
 
@@ -235,11 +236,11 @@ public class Gateway extends MessageCracker implements Application, FragmentHand
     public void onFragment(DirectBuffer buffer, int offset, int length, Header header) {
         final int session = header.sessionId();
         UnsafeBuffer data = new UnsafeBuffer(buffer, offset, length);
-        logger.debug("Received from ME: " + Report.getTimestamp(data));
 
         String clientCompId = Report.getClientCompId(data);
         Symbol symbol = new Symbol(Report.getSymbol(data));
         SessionID sessionID = clientCompId2sessionId.get(clientCompId);
+        logger.debug(sessionID);
         byte status = Report.getOrderStatus(data);
         long orderId = Report.getOrderId(data);
         long clOrdId = Report.getClientOrderId(data);
