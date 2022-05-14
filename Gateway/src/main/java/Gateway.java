@@ -24,11 +24,10 @@ public class Gateway extends MessageCracker implements Application, FragmentHand
     private Publisher matchingEnginePublisher;
     private Subscriber matchingEngineSubscriber;
     private static final AtomicLong execIdGenerator = new AtomicLong();
-    private final Map<SessionID, HashSet<ClOrdID>> sessionActiveOrders;
+    private final Map<SessionID, Map<Long, Long>> sessionActiveOrders;
     private final Map<String, SessionID> clientCompId2sessionId;
     private final Map<String, String> symbol2PubChannel;
     private final Map<String, Integer> channel2StreamId;
-    private final Map<Long, Long> clOrdId2OrderId;
     private final HashSet<String> validOrderTypes = new HashSet<>();
     private static final Logger logger = LogManager.getLogger(Gateway.class);
 
@@ -40,7 +39,6 @@ public class Gateway extends MessageCracker implements Application, FragmentHand
         clientCompId2sessionId = new HashMap<>();
         symbol2PubChannel = new HashMap<>();
         channel2StreamId = new HashMap<>();
-        clOrdId2OrderId = new HashMap<>();
         final String pubUri1 = new ChannelUriStringBuilder()
                 .reliable(true)
                 .media("udp")
@@ -71,8 +69,12 @@ public class Gateway extends MessageCracker implements Application, FragmentHand
         for (String symbol : group1) {
             symbol2PubChannel.put(symbol, pubUri1);
         }
-        for (String symbol : group2) {
-            symbol2PubChannel.put(symbol, pubUri2);
+
+        if (streamIds.length == 2) {
+            // TODO: refactor
+            for (String symbol : group2) {
+                symbol2PubChannel.put(symbol, pubUri2);
+            }
         }
 
         matchingEnginePublisher = new Publisher(this.aeron);
@@ -93,7 +95,7 @@ public class Gateway extends MessageCracker implements Application, FragmentHand
 
     @Override
     public void onLogon(SessionID sessionId) {
-        sessionActiveOrders.put(sessionId, new HashSet<>());
+        sessionActiveOrders.put(sessionId, new HashMap<Long, Long>());
         clientCompId2sessionId.put(sessionId.getSenderCompID(), sessionId);
         System.out.println("Gateway onLogon " + sessionId);
     }
@@ -137,24 +139,17 @@ public class Gateway extends MessageCracker implements Application, FragmentHand
         OrdType ordType = new OrdType(message.getChar(OrdType.FIELD));
 
         ClOrdID clOrdID = message.getClOrdID();
-        OrderID orderNumber = new OrderID(clOrdID.getValue());
         Price price = message.getPrice();
         Symbol symbol = message.getSymbol();
 
         ExecTransType execTransType = new ExecTransType(ExecTransType.NEW);
-        ExecType execType =new ExecType(ExecType.FILL);
-        OrdStatus orderStatus = new OrdStatus(OrdStatus.NEW);
         quickfix.field.Side side = message.getSide();
-        LeavesQty leavesQty = new LeavesQty(100);
-        CumQty cumQuantity = new CumQty(100);
-        AvgPx avgPx = new AvgPx(message.getPrice().getValue());
 
         if (validateOrder(message)) {
             // send to ME
-            sessionActiveOrders.get(sessionID).add(clOrdID);
             long quantity = ordType.getValue() == OrdType.LIMIT ? Double.valueOf(message.getOrderQty().getValue()).longValue() : 0;
             TradeRequest request = new TradeRequest(clientCompId, Long.parseLong(clOrdID.getValue()),
-                    priceToLong(price.getValue()), quantity, symbol.getValue(), (byte) side.getValue(),
+                    doublePriceToLong(price.getValue()), quantity, symbol.getValue(), (byte) side.getValue(),
                     (byte) ordType.getValue());
 
             String channel = symbol2PubChannel.get(symbol.getValue());
@@ -166,24 +161,24 @@ public class Gateway extends MessageCracker implements Application, FragmentHand
 
     public void onMessage(OrderCancelRequest cancelRequest, SessionID sessionID)
             throws FieldNotFound {
-        String clOrdID = cancelRequest.getClOrdID().getValue();
-        OrderID orderId = new OrderID(clOrdID); // TODO: ME sets this
-
+        String clientCompId = cancelRequest.getHeader().getString(SenderCompID.FIELD);
+        OrigClOrdID origClOrdID = cancelRequest.getOrigClOrdID();
+        long clOrdId = Long.parseLong(origClOrdID.getValue());
         Symbol symbol = cancelRequest.getSymbol();
         ExecTransType execTransType = new ExecTransType(ExecTransType.CANCEL);
-        ExecType execType = new ExecType(ExecType.CANCELED);
-        OrdStatus orderStatus = new OrdStatus(OrdStatus.CANCELED);
         quickfix.field.Side side = cancelRequest.getSide();
-        LeavesQty leavesQty = new LeavesQty(0);
-        CumQty cumQuantity = new CumQty(0);
-        AvgPx avgPx = new AvgPx(0);
 
         if (validateCancelRequest(cancelRequest, sessionID)) {
             // send to ME
+            long orderId = sessionActiveOrders.get(sessionID).get(clOrdId);
+            TradeRequest request = new TradeRequest(clientCompId, clOrdId, orderId,
+                    0, 0, symbol.getValue(), (byte) side.getValue(), OrderType.CANCEL.getByteCode());
 
+            String channel = symbol2PubChannel.get(symbol.getValue());
+            matchingEnginePublisher.sendMessage(request.getBuffer(), channel, channel2StreamId.get(channel));
 
         } else {
-            reject(sessionID, orderId, execTransType, side, symbol);
+            reject(sessionID, new OrderID(origClOrdID.getValue()), execTransType, side, symbol);
         }
     }
 
@@ -212,22 +207,21 @@ public class Gateway extends MessageCracker implements Application, FragmentHand
         }
     }
 
-    private long priceToLong(double price) {
+    private long doublePriceToLong(double price) {
         return BigDecimal.valueOf(price).scaleByPowerOfTen(4).longValue();
     }
 
-    private boolean validateOrder(Message order) throws FieldNotFound {
-        return validOrderTypes.contains(order.getChar(OrdType.FIELD) + "");
+    private double longPriceToDouble(long price) {
+        return BigDecimal.valueOf(price).scaleByPowerOfTen(-4).doubleValue();
+    }
+
+    private boolean validateOrder(NewOrderSingle order) throws FieldNotFound {
+        return validOrderTypes.contains(order.getChar(OrdType.FIELD) + "") && symbol2PubChannel.containsKey(order.getSymbol().getValue());
     }
 
     private boolean validateCancelRequest(OrderCancelRequest cancelRequest, SessionID sessionID) throws FieldNotFound {
         String origClOrdID = cancelRequest.getOrigClOrdID().getValue();
-        ClOrdID removeClOrdID = new ClOrdID(origClOrdID);
-
-        if (sessionActiveOrders.containsKey(sessionID)) {
-            return sessionActiveOrders.get(sessionID).remove(removeClOrdID);
-        }
-        return false;
+        return sessionActiveOrders.containsKey(sessionID) && sessionActiveOrders.get(sessionID).containsKey(Long.parseLong(origClOrdID));
     }
 
     public void start(AtomicBoolean running) {
@@ -242,9 +236,42 @@ public class Gateway extends MessageCracker implements Application, FragmentHand
         final int session = header.sessionId();
         UnsafeBuffer data = new UnsafeBuffer(buffer, offset, length);
 
+        String clientCompId = Report.getClientCompId(data);
+        Symbol symbol = new Symbol(Report.getSymbol(data));
+        SessionID sessionID = clientCompId2sessionId.get(clientCompId);
+        byte status = Report.getOrderStatus(data);
+        long orderId = Report.getOrderId(data);
+        long clOrdId = Report.getClientOrderId(data);
+        byte side = Report.getSide(data);
+        quickfix.field.Side FIXSide = side == Side.BID.getByteCode() ? new quickfix.field.Side('1') : new quickfix.field.Side('2');
+        long totalQty = Report.getTotalQuantity(data);
+        long cumExecQty = Report.getCumExecutionQuantity(data);
+        double execPrice = longPriceToDouble(Report.getExecutionPrice(data));
+        CumQty cumQty = new CumQty(Long.valueOf(cumExecQty).doubleValue());
+        LeavesQty leavesQty = new LeavesQty(Long.valueOf(totalQty - cumExecQty).doubleValue());
 
-//        sendExecReport(sessionID, orderId, execId, execTransType,
-//                execType, orderStatus, symbol, side, leavesQty, cumQuantity, avgPx);
+        if (status == Status.REJECTED.getByteCode()) {
+            reject(sessionID, new OrderID(Long.toString(orderId)), new ExecTransType(ExecTransType.CANCEL),
+                    FIXSide, symbol);
+        } else if (status == Status.CANCELLED.getByteCode()) {
+            sendExecReport(sessionID, new OrderID(Long.toString(orderId)), new ExecTransType(ExecTransType.CANCEL),
+                    new ExecType(ExecType.CANCELED), new OrdStatus(OrdStatus.CANCELED),
+                    symbol, FIXSide, new LeavesQty(0), cumQty, new AvgPx(0));
+            sessionActiveOrders.get(sessionID).remove(clOrdId);
+
+        } else if (status == Status.FILLED.getByteCode()) {
+            sessionActiveOrders.get(sessionID).remove(clOrdId);
+            sendExecReport(sessionID, new OrderID(Long.toString(orderId)), new ExecTransType(ExecTransType.NEW),
+                    new ExecType((char) status), new OrdStatus((char) status),
+                    symbol, FIXSide, leavesQty, cumQty, new AvgPx(execPrice));
+
+        } else if (status == Status.PARTIALLY_FILLED.getByteCode()
+                || status == Status.NEW.getByteCode()) {
+            sessionActiveOrders.get(sessionID).put(clOrdId, orderId);
+            sendExecReport(sessionID, new OrderID(Long.toString(orderId)), new ExecTransType(ExecTransType.NEW),
+                    new ExecType((char) status), new OrdStatus((char) status),
+                    symbol, FIXSide, leavesQty, cumQty, new AvgPx(execPrice));
+        }
     }
 
     @Override

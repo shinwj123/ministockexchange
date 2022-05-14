@@ -20,6 +20,7 @@ import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Properties;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicLong;
 
 public final class MatchingEngine implements FragmentHandler, AutoCloseable {
     // Matching Engine per group of securities
@@ -30,6 +31,7 @@ public final class MatchingEngine implements FragmentHandler, AutoCloseable {
     private static final Logger logger = LogManager.getLogger(MatchingEngine.class);
     public final int streamId;
     final Object2ObjectHashMap<String, OrderBook> orderBooks;
+    private static final AtomicLong orderIdGenerator = new AtomicLong();
     final String multicastUri;
 
     public MatchingEngine(String aeronDirectory, int streamId, String ipAddr) {
@@ -104,14 +106,25 @@ public final class MatchingEngine implements FragmentHandler, AutoCloseable {
         final int session = header.sessionId(); // sessionId identifies which gateway is the sender
         UnsafeBuffer data = new UnsafeBuffer(buffer, offset, length);
 
-//        final int numBytes = outBuffer.putStringAscii(0, "OK " + session);
-//        boolean result = multicastPublisher.sendMessage(outBuffer, multicastUri, 10);
-//
-//        if (result) {
-//            logger.debug("successfully sent to gateway");
-//        } else {
-//            logger.debug("failed to send to gateway");
-//        }
+        String clientCompId = TradeRequest.getClientCompId(data);
+        String symbol = TradeRequest.getSymbol(data);
+        long price = TradeRequest.getPrice(data);
+        long quantity = TradeRequest.getQuantity(data);
+        long clOrdId = TradeRequest.getClientOrderId(data);
+        Side side = TradeRequest.getSide(data) == Side.BID.getByteCode() ? Side.BID : Side.ASK;
+        byte type = TradeRequest.getOrderType(data);
+        OrderBook orderBook = orderBooks.get(symbol);
+
+        if (type == OrderType.CANCEL.getByteCode()) {
+            cancel(TradeRequest.getOrderId(data), clOrdId, clientCompId, side, orderBook);
+        } else if (type == OrderType.MARKET.getByteCode()) {
+            process(new Order(clientCompId, clOrdId, orderIdGenerator.incrementAndGet(), side,
+                    OrderType.MARKET, 0, quantity), orderBook);
+            // MARKET order is just a special case of LIMIT order, price is infinity for BID and 0 for ASK
+        } else if (type == OrderType.LIMIT.getByteCode()) {
+            process(new Order(clientCompId, clOrdId, orderIdGenerator.incrementAndGet(), side,
+                    OrderType.LIMIT, price, quantity), orderBook);
+        }
     }
 
     public void start(AtomicBoolean running) {
@@ -189,39 +202,38 @@ public final class MatchingEngine implements FragmentHandler, AutoCloseable {
         }
     }
 
-    public void reject(Order order, OrderBook orderBook) {
-        order.setStatus(Status.REJECTED);
+    public void reject(long orderId, long clOrdId, String clientCompId, Side side, OrderBook orderBook) {
         UnsafeBuffer buffer = new Report()
-                .orderId(order.getOrderId())
-                .clientCompId(order.getClientCompId())
-                .clientOrderId(order.getClientOrderId())
-                .side(order.getSide())
-                .orderStatus(order.getStatus())
-                .totalQuantity(order.getTotalQuantity())
+                .orderId(orderId)
+                .clientCompId(clientCompId)
+                .clientOrderId(clOrdId)
+                .side(side)
+                .orderStatus(Status.REJECTED)
                 .timestamp(new SystemEpochNanoClock().nanoTime())
                 .symbol(orderBook.getSymbol())
                 .buildReport();
         multicastPublisher.sendMessage(buffer, multicastUri, streamId);
     }
 
-    public void cancel(Order order, OrderBook orderBook) {
-        if (orderBook.removeOrder(order.getOrderId())) {
-            order.setStatus(Status.CANCELLED);
+    public void cancel(long orderId, long clOrdId, String clientCompId, Side side, OrderBook orderBook) {
+        Order removed = orderBook.removeOrder(orderId);
+        if (removed != null) {
+            removed.setStatus(Status.CANCELLED);
             UnsafeBuffer buffer = new Report()
-                    .orderId(order.getOrderId())
-                    .clientCompId(order.getClientCompId())
-                    .clientOrderId(order.getClientOrderId())
-                    .side(order.getSide())
-                    .orderStatus(order.getStatus())
-                    .totalQuantity(order.getTotalQuantity())
-                    .cumExecutionQuantity(order.getFilledQuantity())
-                    .deltaQuantity(-(order.getTotalQuantity() - order.getFilledQuantity()))
+                    .orderId(removed.getOrderId())
+                    .clientCompId(removed.getClientCompId())
+                    .clientOrderId(removed.getClientOrderId())
+                    .side(removed.getSide())
+                    .orderStatus(removed.getStatus())
+                    .totalQuantity(removed.getTotalQuantity())
+                    .cumExecutionQuantity(removed.getFilledQuantity())
+                    .deltaQuantity(-(removed.getTotalQuantity() - removed.getFilledQuantity()))
                     .timestamp(new SystemEpochNanoClock().nanoTime())
                     .symbol(orderBook.getSymbol())
                     .buildReport();
             multicastPublisher.sendMessage(buffer, multicastUri, streamId);
         } else {
-            reject(order, orderBook);
+            reject(orderId, clOrdId, clientCompId, side, orderBook);
         }
     }
 

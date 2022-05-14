@@ -107,17 +107,21 @@ public class OrderBook {
         return true;
     }
 
-    public boolean removeOrder(long orderId) {
+    public boolean containsOrder(long orderId) {
+        return id2Order.containsKey(orderId);
+    }
+
+    public Order removeOrder(long orderId) {
         // TODO send update event
         if (!id2Order.containsKey(orderId)) {
-            return false;
+            return null;
         }
         Order orderToRemove = id2Order.get(orderId);
         Long limitPrice = orderToRemove.getPrice();
         id2Order.remove(orderId);
         TreeMap<Long, BookLevel> book = getBook(orderToRemove.getSide());
         BookLevel bookLevel = price2Level.get(limitPrice);
-        bookLevel.remove(orderId);
+        Order order = bookLevel.remove(orderId);
         if (bookLevel.getNumOrders() == 0) {
             book.remove(limitPrice);
             price2Level.remove(limitPrice);
@@ -127,7 +131,7 @@ public class OrderBook {
                 bestAsk = book.isEmpty() ? 0 : book.firstKey();
             }
         }
-        return true;
+        return order;
     }
 
     public TreeMap<Long, BookLevel> getBook(Side side) {

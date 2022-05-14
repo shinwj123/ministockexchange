@@ -7,7 +7,8 @@ import java.util.Map;
 
 enum OrderType {
     MARKET ((byte) 0x01),
-    LIMIT ((byte) 0x02);
+    LIMIT ((byte) 0x02),
+    CANCEL ((byte) 0x03);
 
     private final byte code;
 
