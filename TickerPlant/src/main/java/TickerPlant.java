@@ -97,6 +97,7 @@ public final class TickerPlant implements FragmentHandler, AutoCloseable {
             toUpdate = new OrderBookTP(symbol);
             orderBooks.put(symbol, toUpdate);
         }
+        logger.debug("TP " +  toUpdate);
 
         PriceLevel previousLevel;
         if (side == sellUpdateTag) {
