@@ -6,8 +6,8 @@ import java.util.HashMap;
 import java.util.Map;
 
 enum OrderType {
-    MARKET ((byte) 0x01),
-    LIMIT ((byte) 0x02),
+    MARKET ((byte) 0x31),
+    LIMIT ((byte) 0x32),
     CANCEL ((byte) 0x03);
 
     private final byte code;

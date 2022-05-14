@@ -105,7 +105,6 @@ public final class MatchingEngine implements FragmentHandler, AutoCloseable {
     public void onFragment(DirectBuffer buffer, int offset, int length, Header header) {
         final int session = header.sessionId(); // sessionId identifies which gateway is the sender
         UnsafeBuffer data = new UnsafeBuffer(buffer, offset, length);
-        logger.debug("received from GW: " + TradeRequest.getClientCompId(data) + " " + (char) TradeRequest.getOrderType(data));
 
         String clientCompId = TradeRequest.getClientCompId(data);
         String symbol = TradeRequest.getSymbol(data);
@@ -146,6 +145,7 @@ public final class MatchingEngine implements FragmentHandler, AutoCloseable {
     public void process(Order order, OrderBook orderBook) {
         // check if the symbol is traded on the current ME before call process
         // try match immediately
+        logger.debug(order.toString());
         ArrayList<Order> matches = orderBook.match(order);
         if (matches.size() > 0) {
             for (Order o : matches) {
