@@ -86,6 +86,11 @@ public final class TickerPlant implements FragmentHandler, AutoCloseable {
         String symbol = Report.getSymbol(report);
 
         long deltaQuantity = Report.getDeltaQuantity(report);
+
+        if (deltaQuantity == 0) {
+            return;
+        }
+
         long price = Report.getExecutionPrice(report);
 
         StockPrice stockPrice = new StockPrice(price);
@@ -101,8 +106,14 @@ public final class TickerPlant implements FragmentHandler, AutoCloseable {
         PriceLevel previousLevel;
         if (side == sellUpdateTag) {
             previousLevel = toUpdate.askSide.getSpecificLevel(stockPrice);
+            if (previousLevel == null) {
+                previousLevel = BookSide.toPriceLevel(symbol, stockPrice, 0);
+            }
         } else if (side == buyUpdateTag){
             previousLevel = toUpdate.bidSide.getSpecificLevel(stockPrice);
+            if (previousLevel == null) {
+                previousLevel = BookSide.toPriceLevel(symbol, stockPrice, 0);
+            }
         } else {
             throw new IllegalArgumentException("unknown side for the book update");
         }
