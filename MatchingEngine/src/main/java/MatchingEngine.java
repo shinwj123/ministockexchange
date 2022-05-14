@@ -105,7 +105,7 @@ public final class MatchingEngine implements FragmentHandler, AutoCloseable {
     public void onFragment(DirectBuffer buffer, int offset, int length, Header header) {
         final int session = header.sessionId(); // sessionId identifies which gateway is the sender
         UnsafeBuffer data = new UnsafeBuffer(buffer, offset, length);
-        logger.debug("received from GW: " + TradeRequest.getClientCompId(data));
+        logger.debug("received from GW: " + TradeRequest.getClientCompId(data) + " " + (char) TradeRequest.getOrderType(data));
 
         String clientCompId = TradeRequest.getClientCompId(data);
         String symbol = TradeRequest.getSymbol(data);
@@ -200,6 +200,7 @@ public final class MatchingEngine implements FragmentHandler, AutoCloseable {
                     .symbol(orderBook.getSymbol())
                     .buildReport();
             multicastPublisher.sendMessage(bufferNewOrder, multicastUri, streamId);
+            logger.debug("new LIMIT order added");
         }
     }
 
