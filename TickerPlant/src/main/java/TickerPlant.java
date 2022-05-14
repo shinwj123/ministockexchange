@@ -48,7 +48,7 @@ public final class TickerPlant implements FragmentHandler, AutoCloseable {
         }
 
         int port = 8081;
-        this.server = new TPServer(new InetSocketAddress(ipAddr, port));
+        this.server = new TPServer(new InetSocketAddress("localhost", port));
     }
 
 
