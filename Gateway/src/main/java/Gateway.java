@@ -90,6 +90,7 @@ public class Gateway extends MessageCracker implements Application, FragmentHand
 
     @Override
     public void onCreate(SessionID sessionId) {
+        logger.debug("oncreate" + sessionId + " " + sessionId.getBeginString() + sessionId.getSenderCompID());
         System.out.println("Gateway Session Created with SessionID = " + sessionId);
     }
 
@@ -97,7 +98,7 @@ public class Gateway extends MessageCracker implements Application, FragmentHand
     public void onLogon(SessionID sessionId) {
         sessionActiveOrders.put(sessionId, new HashMap<Long, Long>());
         clientCompId2sessionId.put(sessionId.getSenderCompID(), sessionId);
-        logger.debug(sessionId.getSenderCompID());
+        logger.debug(sessionId + " " + sessionId.getBeginString() + sessionId.getSenderCompID());
         System.out.println("Gateway onLogon " + sessionId);
     }
 
