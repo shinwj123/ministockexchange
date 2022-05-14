@@ -105,7 +105,7 @@ public final class MatchingEngine implements FragmentHandler, AutoCloseable {
     public void onFragment(DirectBuffer buffer, int offset, int length, Header header) {
         final int session = header.sessionId(); // sessionId identifies which gateway is the sender
         UnsafeBuffer data = new UnsafeBuffer(buffer, offset, length);
-        logger.debug("received from GW: " + Report.getClientCompId(data));
+        logger.debug("received from GW: " + TradeRequest.getClientCompId(data));
 
         String clientCompId = TradeRequest.getClientCompId(data);
         String symbol = TradeRequest.getSymbol(data);
