@@ -97,7 +97,6 @@ public final class TickerPlant implements FragmentHandler, AutoCloseable {
             toUpdate = new OrderBookTP(symbol);
             orderBooks.put(symbol, toUpdate);
         }
-        logger.debug("TP " +  toUpdate);
 
         PriceLevel previousLevel;
         if (side == sellUpdateTag) {
@@ -107,6 +106,8 @@ public final class TickerPlant implements FragmentHandler, AutoCloseable {
         } else {
             throw new IllegalArgumentException("unknown side for the book update");
         }
+
+        logger.debug("TP: " + previousLevel);
 
         toUpdate.priceLevelUpdate(symbol, stockPrice, deltaQuantity, side, previousLevel);
 

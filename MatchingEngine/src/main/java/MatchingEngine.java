@@ -192,6 +192,7 @@ public final class MatchingEngine implements FragmentHandler, AutoCloseable {
                     .clientOrderId(order.getClientOrderId())
                     .side(order.getSide())
                     .orderStatus(order.getStatus())
+                    .executionPrice(order.getPrice())
                     .executionQuantity(order.getLastExecutedQuantity())
                     .cumExecutionQuantity(order.getFilledQuantity())
                     .totalQuantity(order.getTotalQuantity())
