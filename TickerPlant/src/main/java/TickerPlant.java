@@ -18,7 +18,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 public final class TickerPlant implements FragmentHandler, AutoCloseable {
     private final Aeron aeron;
 
-    private Subscriber matchingEngineSubscriber;
+    private final Subscriber matchingEngineSubscriber;
     private static final Logger logger = LogManager.getLogger(TickerPlant.class);
 
     final Object2ObjectHashMap<String, OrderBookTP> orderBooks;

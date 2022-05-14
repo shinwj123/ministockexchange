@@ -26,8 +26,8 @@ public final class MatchingEngine implements FragmentHandler, AutoCloseable {
     // Matching Engine per group of securities
     private static Properties properties;
     private final Aeron aeron;
-    private Publisher multicastPublisher;
-    private Subscriber gatewaySubscriber;
+    private final Publisher multicastPublisher;
+    private final Subscriber gatewaySubscriber;
     private static final Logger logger = LogManager.getLogger(MatchingEngine.class);
     public final int streamId;
     final Object2ObjectHashMap<String, OrderBook> orderBooks;

@@ -21,8 +21,8 @@ import java.util.concurrent.atomic.AtomicLong;
 
 public class Gateway extends MessageCracker implements Application, FragmentHandler, AutoCloseable {
     private final Aeron aeron;
-    private Publisher matchingEnginePublisher;
-    private Subscriber matchingEngineSubscriber;
+    private final Publisher matchingEnginePublisher;
+    private final Subscriber matchingEngineSubscriber;
     private static final AtomicLong execIdGenerator = new AtomicLong();
     private final Map<SessionID, Map<Long, Long>> sessionActiveOrders;
     private final Map<String, SessionID> clientCompId2sessionId;
