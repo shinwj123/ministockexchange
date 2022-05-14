@@ -118,7 +118,7 @@ public final class TickerPlant implements FragmentHandler, AutoCloseable {
             throw new IllegalArgumentException("unknown side for the book update");
         }
 
-        logger.debug("TP: " + previousLevel);
+        logger.debug("TP: " + Report.toJson(report));
 
         toUpdate.priceLevelUpdate(symbol, stockPrice, deltaQuantity, side, previousLevel);
 
