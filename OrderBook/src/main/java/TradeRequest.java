@@ -6,7 +6,7 @@ import java.nio.charset.StandardCharsets;
 public final class TradeRequest {
     private byte[] clientCompId; // senderCompId for FIX client max 8 bytes
     private long clientOrderId;
-    private long orderId; // set for CANCEL
+    private long orderId;
     private long price;
     private byte[] symbol; // max 8 bytes
     private byte side; // consistent with IEX DEEP  BID: '8' 0x38 ASK: '5' 0x35
@@ -29,6 +29,7 @@ public final class TradeRequest {
     public TradeRequest(String clientCompId, long clientOrderId, long orderId, long price, long quantity, String symbol, byte side, byte orderType) {
         this.buffer = new UnsafeBuffer(BufferUtil.allocateDirectAligned(BUFFER_SIZE, 8));
         this.clientOrderId = clientOrderId;
+        this.orderId = orderId;
         this.price = price;
         this.quantity = quantity;
         this.symbol = stringToBytes(symbol);
@@ -36,6 +37,7 @@ public final class TradeRequest {
         this.side = side;
         this.orderType = orderType;
         this.buffer.putLong(CLIENT_ORDER_ID_OFFSET, clientOrderId);
+        this.buffer.putLong(ORDER_ID_OFFSET, orderId);
         this.buffer.putLong(PRICE_OFFSET, price);
         this.buffer.putLong(QUANTITY_OFFSET, quantity);
         this.buffer.putBytes(SYMBOL_OFFSET, this.symbol);

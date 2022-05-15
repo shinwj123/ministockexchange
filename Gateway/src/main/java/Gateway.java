@@ -29,6 +29,7 @@ public class Gateway extends MessageCracker implements Application, FragmentHand
     private final Map<String, String> symbol2PubChannel;
     private final Map<String, Integer> channel2StreamId;
     private final HashSet<String> validOrderTypes = new HashSet<>();
+    private static final AtomicLong orderIdGenerator = new AtomicLong();
     private static final Logger logger = LogManager.getLogger(Gateway.class);
 
 
@@ -141,14 +142,18 @@ public class Gateway extends MessageCracker implements Application, FragmentHand
         ClOrdID clOrdID = message.getClOrdID();
         Price price = message.getPrice();
         Symbol symbol = message.getSymbol();
+        long clOrdId = Long.parseLong(clOrdID.getValue());
 
         ExecTransType execTransType = new ExecTransType(ExecTransType.NEW);
         quickfix.field.Side side = message.getSide();
 
         if (validateOrder(message)) {
             // send to ME
+            long orderId = orderIdGenerator.incrementAndGet();
             long quantity = ordType.getValue() == OrdType.LIMIT ? Double.valueOf(message.getOrderQty().getValue()).longValue() : 0;
-            TradeRequest request = new TradeRequest(clientCompId, Long.parseLong(clOrdID.getValue()),
+            sessionActiveOrders.get(sessionID).put(clOrdId, orderId);
+
+            TradeRequest request = new TradeRequest(clientCompId, clOrdId, orderId,
                     doublePriceToLong(price.getValue()), quantity, symbol.getValue(), (byte) side.getValue(),
                     (byte) ordType.getValue());
 
@@ -171,7 +176,6 @@ public class Gateway extends MessageCracker implements Application, FragmentHand
         if (validateCancelRequest(cancelRequest, sessionID)) {
             // send to ME
             long orderId = sessionActiveOrders.get(sessionID).get(clOrdId);
-            logger.debug("cancel order " + orderId);
             TradeRequest request = new TradeRequest(clientCompId, clOrdId, orderId,
                     0, 0, symbol.getValue(), (byte) side.getValue(), OrderType.CANCEL.getByteCode());
 
@@ -179,7 +183,6 @@ public class Gateway extends MessageCracker implements Application, FragmentHand
             matchingEnginePublisher.sendMessage(request.getBuffer(), channel, channel2StreamId.get(channel));
 
         } else {
-            logger.debug("cancel rejected");
             reject(sessionID, new OrderID(origClOrdID.getValue()), execTransType, side, symbol);
         }
     }
@@ -223,8 +226,6 @@ public class Gateway extends MessageCracker implements Application, FragmentHand
 
     private boolean validateCancelRequest(OrderCancelRequest cancelRequest, SessionID sessionID) throws FieldNotFound {
         String origClOrdID = cancelRequest.getOrigClOrdID().getValue();
-        logger.debug(sessionActiveOrders.get(sessionID));
-        logger.debug(origClOrdID);
         return sessionActiveOrders.containsKey(sessionID) && sessionActiveOrders.get(sessionID).containsKey(Long.parseLong(origClOrdID));
     }
 
@@ -271,7 +272,7 @@ public class Gateway extends MessageCracker implements Application, FragmentHand
 
         } else if (status == Status.PARTIALLY_FILLED.getByteCode()
                 || status == Status.NEW.getByteCode()) {
-            sessionActiveOrders.get(sessionID).put(clOrdId, orderId);
+
             sendExecReport(sessionID, new OrderID(Long.toString(orderId)), new ExecTransType(ExecTransType.NEW),
                     new ExecType((char) status), new OrdStatus((char) status),
                     symbol, FIXSide, leavesQty, cumQty, new AvgPx(execPrice));

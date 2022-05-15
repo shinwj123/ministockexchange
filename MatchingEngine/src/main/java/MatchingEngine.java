@@ -31,7 +31,6 @@ public final class MatchingEngine implements FragmentHandler, AutoCloseable {
     private static final Logger logger = LogManager.getLogger(MatchingEngine.class);
     public final int streamId;
     final Object2ObjectHashMap<String, OrderBook> orderBooks;
-    private static final AtomicLong orderIdGenerator = new AtomicLong();
     final String multicastUri;
 
     public MatchingEngine(String aeronDirectory, int streamId, String ipAddr) {
@@ -111,19 +110,20 @@ public final class MatchingEngine implements FragmentHandler, AutoCloseable {
         long price = TradeRequest.getPrice(data);
         long quantity = TradeRequest.getQuantity(data);
         long clOrdId = TradeRequest.getClientOrderId(data);
+        long orderId = TradeRequest.getOrderId(data);
         Side side = TradeRequest.getSide(data) == (byte) '1' ? Side.BID : Side.ASK;
         byte type = TradeRequest.getOrderType(data);
         OrderBook orderBook = orderBooks.get(symbol);
 
         if (type == OrderType.CANCEL.getByteCode()) {
             logger.debug("cancel order received for clorderId "+ clOrdId);
-            cancel(TradeRequest.getOrderId(data), clOrdId, clientCompId, side, orderBook);
+            cancel(orderId, clOrdId, clientCompId, side, orderBook);
         } else if (type == OrderType.MARKET.getByteCode()) {
-            process(new Order(clientCompId, clOrdId, orderIdGenerator.incrementAndGet(), side,
+            process(new Order(clientCompId, clOrdId, orderId, side,
                     OrderType.MARKET, 0, quantity), orderBook);
             // MARKET order is just a special case of LIMIT order, price is infinity for BID and 0 for ASK
         } else if (type == OrderType.LIMIT.getByteCode()) {
-            process(new Order(clientCompId, clOrdId, orderIdGenerator.incrementAndGet(), side,
+            process(new Order(clientCompId, clOrdId, orderId, side,
                     OrderType.LIMIT, price, quantity), orderBook);
         }
     }
