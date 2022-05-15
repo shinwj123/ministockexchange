@@ -171,6 +171,7 @@ public class Gateway extends MessageCracker implements Application, FragmentHand
         if (validateCancelRequest(cancelRequest, sessionID)) {
             // send to ME
             long orderId = sessionActiveOrders.get(sessionID).get(clOrdId);
+            logger.debug("cancel order " + orderId);
             TradeRequest request = new TradeRequest(clientCompId, clOrdId, orderId,
                     0, 0, symbol.getValue(), (byte) side.getValue(), OrderType.CANCEL.getByteCode());
 

@@ -116,6 +116,7 @@ public final class MatchingEngine implements FragmentHandler, AutoCloseable {
         OrderBook orderBook = orderBooks.get(symbol);
 
         if (type == OrderType.CANCEL.getByteCode()) {
+            logger.debug("cancel order received for clorderId "+ clOrdId);
             cancel(TradeRequest.getOrderId(data), clOrdId, clientCompId, side, orderBook);
         } else if (type == OrderType.MARKET.getByteCode()) {
             process(new Order(clientCompId, clOrdId, orderIdGenerator.incrementAndGet(), side,
