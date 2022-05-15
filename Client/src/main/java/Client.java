@@ -44,10 +44,7 @@ public class Client extends MessageCracker implements Application {
     public void toAdmin(Message message, SessionID sessionId) {}
 
     @Override
-    public void toApp(Message message, SessionID sessionId) throws DoNotSend {
-        System.out.println("Client Order Sent: " + message.toString());
-
-        System.out.println(Arrays.toString(message.toString().trim().split("\u0001")));
+    public void toApp(Message message, SessionID sessionId) {
     }
 
     @Override

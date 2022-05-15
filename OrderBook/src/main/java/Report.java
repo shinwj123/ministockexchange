@@ -185,7 +185,7 @@ public final class Report {
         json.put("status", Status.getNameFromByte(Report.getOrderStatus(buffer)));
         json.put("totalQuantity", Report.getTotalQuantity(buffer));
         long executionPrice = Report.getExecutionPrice(buffer);
-        json.put("executionPrice", executionPrice != 0 ? Order.getPriceString(executionPrice) : JSONObject.NULL);
+        json.put("executionPrice", executionPrice != 0 ? Order.getPriceDouble(executionPrice) : JSONObject.NULL);
         long executionQuantity = Report.getExecutionQuantity(buffer);
         json.put("executionQuantity", executionQuantity != 0 ? executionQuantity : JSONObject.NULL);
         json.put("cumExecutionQuantity", Report.getCumExecutionQuantity(buffer));

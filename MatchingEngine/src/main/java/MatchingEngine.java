@@ -111,7 +111,7 @@ public final class MatchingEngine implements FragmentHandler, AutoCloseable {
         long price = TradeRequest.getPrice(data);
         long quantity = TradeRequest.getQuantity(data);
         long clOrdId = TradeRequest.getClientOrderId(data);
-        Side side = TradeRequest.getSide(data) == Side.BID.getByteCode() ? Side.BID : Side.ASK;
+        Side side = TradeRequest.getSide(data) == (byte) '1' ? Side.BID : Side.ASK;
         byte type = TradeRequest.getOrderType(data);
         OrderBook orderBook = orderBooks.get(symbol);
 
@@ -145,7 +145,6 @@ public final class MatchingEngine implements FragmentHandler, AutoCloseable {
     public void process(Order order, OrderBook orderBook) {
         // check if the symbol is traded on the current ME before call process
         // try match immediately
-        logger.debug(order.toString());
         ArrayList<Order> matches = orderBook.match(order);
         if (matches.size() > 0) {
             for (Order o : matches) {
@@ -201,7 +200,6 @@ public final class MatchingEngine implements FragmentHandler, AutoCloseable {
                     .symbol(orderBook.getSymbol())
                     .buildReport();
             multicastPublisher.sendMessage(bufferNewOrder, multicastUri, streamId);
-            logger.debug("new LIMIT order added");
         }
     }
 

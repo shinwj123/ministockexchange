@@ -5,7 +5,7 @@ import "@finos/perspective-workspace";
 
 import "./index.less";
 
-const URL = "ws://localhost:8081/websocket";
+const URL = "ws://localhost:8082/websocket";
 
 const websocket = perspective.websocket(URL);
 const worker = perspective.shared_worker();

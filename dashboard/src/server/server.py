@@ -1,6 +1,8 @@
 import logging
 import threading
 import json
+
+from torch import int64
 import websocket
 import ssl
 import multiprocessing as mp
@@ -15,49 +17,81 @@ from perspective import Table, PerspectiveTornadoHandler, PerspectiveManager
 logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(process)d %(levelname)s: %(message)s")
 
 
-class GeminiOrderBookDataSource(object):
+# class GeminiOrderBookDataSource(object):
+
+#     def __init__(self, symbol, data_queue):
+#         """A datasource that interfaces with the Gemini Websockets API to
+#         receive live order book data and submits it to a queue in order
+#         to update the Perspective table."""
+#         self.symbol = symbol
+#         self.data_queue = data_queue
+#         self.url = "wss://api.sandbox.gemini.com/v1/marketdata/{}?bids=true&offers=true&trades=false".format(self.symbol)
+
+#     def start(self):
+#         """Make the API connection."""
+#         logging.info("Connecting to Gemini for {} order book".format(self.symbol))
+#         self.ws = websocket.WebSocketApp(self.url, on_message=self.on_message)
+#         self.ws.run_forever(sslopt={"cert_reqs": ssl.CERT_NONE})
+
+#     def format_msg(self, msg):
+#         """Given a message from the Gemini order book, format it properly
+#         for the Perspective table."""
+#         formatted = []
+#         timestamp = msg.get("timestamp")
+
+#         if timestamp:
+#             timestamp = datetime.fromtimestamp(timestamp)
+#         else:
+#             timestamp = datetime.now()
+
+#         for event in msg["events"]:
+#             event["symbol"] = self.symbol
+#             event["timestamp"] = timestamp
+#             event["price"] = float(event["price"])
+#             event["remaining"] = float(event["remaining"])
+#             event["delta"] = float(event["delta"])
+
+#             formatted.append(event)
+
+#         return formatted
+
+#     def on_message(self, ws, msg):
+#         """Format the message from Gemini and add it to the queue so
+#         the data updater thread can pick it up and apply it to the table."""
+#         if msg is None:
+#             logging.warn("Gemini API connection closed for symbol {}".format(self.symbol))
+#             return
+
+#         msg = json.loads(msg)
+#         self.data_queue.put(self.format_msg(msg))
+
+class WebTickerPlant(object):
 
     def __init__(self, symbol, data_queue):
-        """A datasource that interfaces with the Gemini Websockets API to
+        """A datasource that interfaces with our Websockets API to
         receive live order book data and submits it to a queue in order
         to update the Perspective table."""
         self.symbol = symbol
         self.data_queue = data_queue
-        self.url = "wss://api.sandbox.gemini.com/v1/marketdata/{}?bids=true&offers=true&trades=false".format(self.symbol)
+        self.url = "ws://localhost:8081"
 
     def start(self):
         """Make the API connection."""
-        logging.info("Connecting to Gemini for {} order book".format(self.symbol))
+        logging.info("Connecting to {} order book".format(self.symbol))
         self.ws = websocket.WebSocketApp(self.url, on_message=self.on_message)
         self.ws.run_forever(sslopt={"cert_reqs": ssl.CERT_NONE})
 
     def format_msg(self, msg):
-        """Given a message from the Gemini order book, format it properly
+        """Given a report message from TickerPlant, format it properly
         for the Perspective table."""
         formatted = []
-        timestamp = msg.get("timestamp")
-
-        if timestamp:
-            timestamp = datetime.fromtimestamp(timestamp)
-        else:
-            timestamp = datetime.now()
-
-        for event in msg["events"]:
-            event["symbol"] = self.symbol
-            event["timestamp"] = timestamp
-            event["price"] = float(event["price"])
-            event["remaining"] = float(event["remaining"])
-            event["delta"] = float(event["delta"])
-
-            formatted.append(event)
+        
 
         return formatted
 
     def on_message(self, ws, msg):
-        """Format the message from Gemini and add it to the queue so
-        the data updater thread can pick it up and apply it to the table."""
         if msg is None:
-            logging.warn("Gemini API connection closed for symbol {}".format(self.symbol))
+            logging.warn("connection closed for symbol {}".format(self.symbol))
             return
 
         msg = json.loads(msg)
@@ -75,7 +109,7 @@ ORDER_BOOK = Table({
     "price": float,
     "delta": float,
     "remaining": float,
-    "timestamp": datetime
+    "timestamp": int
 }, limit=5000)
 
 def perspective_thread():
@@ -115,7 +149,7 @@ def start():
     psp_thread.start()
 
     # The process that runs the datasource
-    orders = GeminiOrderBookDataSource("ethusd", orders_queue)
+    orders = WebTickerPlant("NVDA", orders_queue)
     orders_process = mp.Process(target=orders.start)
     orders_process.start()
 
@@ -128,7 +162,7 @@ def start():
     ])
 
     # Tornado listens on the main process
-    app.listen(8081)
+    app.listen(8082)
     app_loop = tornado.ioloop.IOLoop()
     app_loop.make_current()
     app_loop.start()
