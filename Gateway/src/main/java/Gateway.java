@@ -179,6 +179,7 @@ public class Gateway extends MessageCracker implements Application, FragmentHand
             matchingEnginePublisher.sendMessage(request.getBuffer(), channel, channel2StreamId.get(channel));
 
         } else {
+            logger.debug("cancel rejected");
             reject(sessionID, new OrderID(origClOrdID.getValue()), execTransType, side, symbol);
         }
     }
@@ -222,6 +223,8 @@ public class Gateway extends MessageCracker implements Application, FragmentHand
 
     private boolean validateCancelRequest(OrderCancelRequest cancelRequest, SessionID sessionID) throws FieldNotFound {
         String origClOrdID = cancelRequest.getOrigClOrdID().getValue();
+        logger.debug(sessionActiveOrders.get(sessionID));
+        logger.debug(origClOrdID);
         return sessionActiveOrders.containsKey(sessionID) && sessionActiveOrders.get(sessionID).containsKey(Long.parseLong(origClOrdID));
     }
 
