@@ -120,7 +120,7 @@ public class Gateway extends MessageCracker implements Application, FragmentHand
 
     @Override
     public void toApp(Message message, SessionID sessionId) {
-        System.out.println("Gateway Order Reception : " + reformatFIXMessage(message));
+        System.out.println("Send back to client: " + reformatFIXMessage(message));
     }
 
     private String reformatFIXMessage(Message message) {

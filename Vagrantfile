@@ -19,18 +19,16 @@ Vagrant.configure("2") do |config|
     config.vm.box_download_checksum_type = "sha256"
     config.ssh.insert_key = false
 
-    (1..2).each do |i|
-        config.vm.define "client#{i}" do |client|
-            client.vm.hostname = "client#{i}"
+    config.vm.define "client" do |client|
+        client.vm.hostname = "client"
 
-            client.vm.provider :virtualbox do |vb|
-                vb.customize ["modifyvm", :id, "--memory", "1024"]
-                vb.customize ["modifyvm", :id, "--cpus", "2"]
-            end
-
-            client.vm.network "private_network", ip: "192.168.0.2#{i}", virtualbox__intnet: "exchange_network", nic_type: "virtio"
-            client.vm.provision "shell", path: "scripts/install.sh"
+        client.vm.provider :virtualbox do |vb|
+            vb.customize ["modifyvm", :id, "--memory", "1024"]
+            vb.customize ["modifyvm", :id, "--cpus", "2"]
         end
+
+        client.vm.network "private_network", ip: "192.168.0.21", virtualbox__intnet: "exchange_network", nic_type: "virtio"
+        client.vm.provision "shell", path: "scripts/client_install.sh"
     end
 
     (1..2).each do |i|
@@ -44,7 +42,6 @@ Vagrant.configure("2") do |config|
 
             me.vm.network "private_network", ip: "192.168.0.5#{i}", virtualbox__intnet: "exchange_network", nic_type: "virtio"
             me.vm.provision "shell", path: "scripts/install.sh"
-            me.vm.provision "shell", path: "scripts/me_setup.sh"
         end
     end
 
@@ -60,7 +57,6 @@ Vagrant.configure("2") do |config|
         gateway.vm.network "private_network", ip: "192.168.0.101", virtualbox__intnet: "exchange_network", nic_type: "virtio"
         gateway.vm.network "forwarded_port", guest: 3000, host: 3000
         gateway.vm.provision "shell", path: "scripts/install.sh"
-        gateway.vm.provision "shell", path: "scripts/gateway_setup.sh"
     end
 
     config.vm.define "tickerplant" do |tp|

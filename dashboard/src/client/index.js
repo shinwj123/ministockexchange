@@ -17,14 +17,13 @@ const worker = perspective.shared_worker();
  * @param {String} table_name 
  * @returns 
  */
-const datasource = async function(table_name) {
+const datasource = async function(table_name, config) {
     // Open the table on the server, and create a view on the server.
     const server_table = await websocket.open_table(table_name);
     const server_view = await server_table.view();
 
     // Create a table in the browser which mirrors the table on the server.
     const limit = await server_table.get_limit();
-    const config = {}
 
     if (limit) config.limit = limit;
 
@@ -44,26 +43,16 @@ const datasource = async function(table_name) {
  * Load our tables, and load the workspace configuration from localStorage.
  */
 window.addEventListener("load", async () => {
-    const order_book = await datasource("order_book");
+    const order_book = await datasource("order_book", {index: 'price'});
+    const market = await datasource("market", {});
 
     // Register the client-side table we just created.
     window.workspace.tables.set("order_book", order_book);
+    window.workspace.tables.set("market", market);
 
     window.workspace.addEventListener("workspace-layout-update", async function() {
         localStorage.setItem("layout", JSON.stringify(await window.workspace.save()))
     });
 
-    // window.workspace.restore(JSON.parse(localStorage.getItem("layout")));
-    window.workspace.restore({
-        detail: {
-            main: {
-                currentIndex: 0,
-                type: "tab-area",
-                widgets: ["flat"],
-            },
-        },
-        viewers: {
-            flat: {table: "order_book"},
-        },
-    })
+    window.workspace.restore(JSON.parse(localStorage.getItem("layout")));
 });

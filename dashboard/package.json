@@ -6,6 +6,7 @@
   "browser": "./dist/index.js",
   "private": true,
   "scripts": {
+    "start": "yarn start:client & yarn start:server",
     "start:client": "webpack serve",
     "start:server": "python3 src/server/server.py",
     "build": "webpack --color"

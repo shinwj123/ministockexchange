@@ -5,3 +5,5 @@ build
 __pycache__
 .pyc
 yarn-error.log
+initiator/logs/*
+initiator/Sessions/*

@@ -33,22 +33,20 @@ public class OrderBookTP {
         }
     }
 
-    public void priceLevelUpdate(String symbol, StockPrice stockPrice, long deltaQuantity, byte side, PriceLevel previousLevel) {
+    public long priceLevelUpdate(String symbol, StockPrice stockPrice, long deltaQuantity, byte side, PriceLevel previousLevel) {
         //based on the message, if it is sell, put into the ask side
         //if it is buying, put into the bidside
         // else, through illegal arg exception since messagetype is unknown...
 
         byte buyUpdateTag = (byte) 0x38;
         byte sellUpdateTag = (byte) 0x35;
-        byte eventProcessing = (byte) 0x0;
-        byte eventComplete = (byte) 0x1;
         if (side == sellUpdateTag) {
             // find some way to send the message using MarketDataPublisher
-            askSide.priceLevelUpdateFromMessage(symbol, stockPrice, deltaQuantity, side, previousLevel);
+            return askSide.priceLevelUpdateFromMessage(symbol, stockPrice, deltaQuantity, side, previousLevel);
 
 
         } else if (side == buyUpdateTag) {
-            bidSide.priceLevelUpdateFromMessage(symbol, stockPrice, deltaQuantity, side, previousLevel);
+            return bidSide.priceLevelUpdateFromMessage(symbol, stockPrice, deltaQuantity, side, previousLevel);
 
         } else {
             throw new IllegalArgumentException("Unknown Price Level Update side. Cannot proceed.");

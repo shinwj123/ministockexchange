@@ -1,6 +1,5 @@
 #!/bin/bash
-PROJECT_ROOT=/home/vagrant/dev
-mkdir -p $PROJECT_ROOT
+PROJECT_ROOT=/vagrant
 cd $PROJECT_ROOT
 
 sudo yum install -y git
@@ -28,9 +27,5 @@ sudo chmod +x /etc/profile.d/maven.sh
 source /etc/profile.d/maven.sh
 
 echo "Finished installing dependencies"
-
-TOKEN=YOUR_TOKEN
-git clone https://oath2:${TOKEN}@gitlab.engr.illinois.edu/ie598_high_frequency_trading_spring_2022/ie498_hft_spring_2022_group_03/group_03_project.git && cd $PROJECT_ROOT/group_03_project
-git checkout staging
 
 chown -R vagrant:vagrant $PROJECT_ROOT

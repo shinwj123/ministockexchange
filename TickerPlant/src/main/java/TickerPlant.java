@@ -10,6 +10,7 @@ import org.agrona.concurrent.SigInt;
 import org.agrona.concurrent.UnsafeBuffer;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.json.JSONObject;
 
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
@@ -117,10 +118,10 @@ public final class TickerPlant implements FragmentHandler, AutoCloseable {
         } else {
             throw new IllegalArgumentException("unknown side for the book update");
         }
-
-        toUpdate.priceLevelUpdate(symbol, stockPrice, deltaQuantity, side, previousLevel);
-
-        server.broadcast(Report.toJson(report).toString());
+        JSONObject reportJson = Report.toJson(report);
+        long newSize = toUpdate.priceLevelUpdate(symbol, stockPrice, deltaQuantity, side, previousLevel);
+        reportJson.put("newSize", newSize);
+        server.broadcast(reportJson.toString());
     }
 
     public static void main(String[] args) throws Exception {

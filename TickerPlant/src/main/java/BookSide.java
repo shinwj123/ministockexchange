@@ -49,7 +49,7 @@ public class BookSide {
     }
 
 
-    void priceLevelUpdateFromMessage(String symbol, StockPrice stockPrice, long deltaQuantity, byte side, PriceLevel previousLevel) {
+    long priceLevelUpdateFromMessage(String symbol, StockPrice stockPrice, long deltaQuantity, byte side, PriceLevel previousLevel) {
         //if add size to a price level
         long currentSize = previousLevel.getSize();
         long newSize = currentSize + deltaQuantity;
@@ -60,7 +60,7 @@ public class BookSide {
         } else {
             bookSideTree.remove(stockPrice);
         }
-
+        return newSize;
     }
 
     public static byte[] IEXPriceLevelUpdateMessage(boolean buySide,
