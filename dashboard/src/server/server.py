@@ -23,7 +23,7 @@ class WebTickerPlant(object):
         to update the Perspective table."""
         self.symbol = symbol
         self.data_queue = data_queue
-        self.url = "ws://localhost:8081"
+        self.url = "ws://192.168.0.201:8081"
 
     def start(self):
         """Make the API connection."""
@@ -129,7 +129,7 @@ def start():
     ])
 
     # Tornado listens on the main process
-    app.listen(8082)
+    app.listen(8082, '0.0.0.0')
     app_loop = tornado.ioloop.IOLoop()
     app_loop.make_current()
     app_loop.start()
