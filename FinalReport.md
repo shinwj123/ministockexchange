@@ -2,11 +2,6 @@ Mini Exchange Project Report
 ===
 An Order Matching Engine, Gateway, and Tickerplant in Java SE 11
 
-
-## Table of Contents
-
-[TOC]
-
 ## Team Introduction
 
 ### Team Leader: Wenyu “Daniel” Gu (wenyugu2@illinois.edu)
@@ -120,8 +115,6 @@ The primary motivation of choosing perspective as the orderbook visualization to
 The Client application (aka Trader) is used to send order to gateway via TCP in proper FIX format. They can send new order, market order and limit order, and order cancel request. Furthermore, multiple clients can connect to the same gateway via TCP connection in different FIX sessions. After submitting orders, clients will receive execution report from the gateway where they are informed about whether their trade is accepted, executed, canceled, or rejected.
 #### Implementation
 The session of the Client application is set up by configuration in the SessionSettings class and setting a Client class as the application. A socket initiator for the TCP connection is created based on the session settings. A client first logs on, establish a FIX session with the gateway socker acceptors, and submit orders. Then, the client will specify clOrdId for new order or cancel request for its own tracking purpose (e.g. client will submit cancel request by referring to the id of the order to be cancelled). Client application could also send the multiple orders by reading from a script containing order instructions on each line by using the ClientMessageParser class, which stores each single order in an ArrayList. ClientMessageParser class also classifies the String in to certain tag format of FIX.  
-<!-- #### What we got right
-The client application had a proper connection to the socket and successfully logged on to the gateway application. Moreover, proper format of the FIX trade order message was sent via TCP connection. The appropriate Execution report was also successfully received based on the status of the message.   -->
 #### What could be improved
 One of the aspects that needs to be improved for client was enabling the feature of users able to manual entering the trading order in the User Interface. Currently, users can change the textfile to enter the orders. However, this is not able to be done in the frontend user interface. 
 Currently, the dashboard is connected with python-based AI client that sends FIX message to the gateway. For future expansion, the Client Application would be connected with the dashboard to be able to manually enter the trading order in the dashboard. This could be modifying server.py and index.js while connecting to client application.
@@ -159,7 +152,7 @@ The TreeMap update method is called when the TickerPlant aeron subscriber receiv
 There are two potential improvements for the TickerPlant: 
 
 First, the tickerplant maintains orderbooks for different stock symbols, and each orderbook contains two Java [TreeMaps](https://docs.oracle.com/javase/8/docs/api/java/util/TreeMap.html), one for the ask and one for the bid sides. The TreeMaps are maintained in a seperate class from the main orderbook class. The fact that individual side books are maintain in a seperate class means more interclass interactions, which increases load during program execution. The orderbook class and side book class can potentially be integrated into one class to reduce call stacks during update, enhancing efficiency of per message price level update and information retrieval. 
-  
+
 Second, the tickerplant also includes utility to output IEX pricelevel update message as an encoded byte array of length 32 and an utility to decode message into an object that displays the attributes of the message in a human readable form. Currently the tickerplant is only receiving message from the order matching engine. For future expansion, the tickerplant might publish byte encoded message to subcribers through aeron milticast, and the message subscribers can convert message to human readable format through the decoding utility.
 
 
@@ -275,23 +268,11 @@ The client mirrors the table from the server, format information, and display vi
     │   ├── install.sh
     │   ├── set_vagrant_env.sh
     │   └── start_all.sh
-    │
-    ├── Design.md 
-    │
-    ├── FinalReport.md
-    │
-    ├── README.md                    
-    │
-    ├── Reference.md                   
-    │
+    │                   
     ├── Vagrantfile                    
     │
-    ├── exchange.png  
-    │
-    ├── orderbook-realtime.gif 
-    │
     └── pom.xml
-    
+
 
 The Exchange components are: Client, Gateway, MatchingEngine, MediaDriver, OrderBook, TickerPlant, and dashboard. They are seperate directories at the root level of the repository. 
 
@@ -428,12 +409,12 @@ There are two aspects that I have learned from doing this project.
 - Theoretical
 Although using existing library itself does not involve understanding implementation detail of the library, having a good theoratical foundation in system program and networking is crucial to help me learn using library fast. Due to lack of system programing knowledge, I had hard time reading aeron documentation and use aeron API flexibly. This compels me to learn knowledge about thread, process, networking such as UDP and TCP. Learning the necessity of low level knowledge, I would imagine more low level knowledge is required in making more performance sensitive applications.
 - Project Practice
-Though this could be a cliche, I really gained project experience unprecedented in previous CS classes. 
+  Though this could be a cliche, I really gained project experience unprecedented in previous CS classes. 
 
     The first thing required to be a good team member in a project is to have a good high level overview of the business logics behind the project. Initially my tickerplant logic was wrong not because I failed to implement programming logics I had in mind but that I misinterpret the overall functionality of the tickerplant in the project. Daniel corrected my understanding by showing me what the exchange should look like from the view of the Tickerplant. Knowing how each module interacts with other components is the necessary condition of correctly implementating my part in any project. Also a proper understanding of componentwise interaction will aid simplifying structure of each section, facilitating future project maintainance. 
-    
+  
     The second thing is proper git practice to make project repository clean on both my local branch and remote branch. Initially I was not aware of what should be ignored when commit local change to git, and I even pushed my code to main branch without knowing.(Daniel took a while to teach me how to revert) Working on the project really encourages me to further explore proper git practices and work on the project from a persepctive of maintainer rather then a student working on a for-grade assignment.
-    
+  
     The third thing is that I understand the necessity of quickly organizing fragmentalized, abstract information such as API documentation. I understand this must be gained through more project experience and I still have much to learn.
 
 3. If you had a time machine and could go back to the beginning, what would you have done differently?
@@ -460,7 +441,7 @@ Though this could be a cliche, I really gained project experience unprecedented 
 2. What did you learn as a result of doing your project?
 
      I had an excellent education with getting an experience solely development experience. For developing Java-based Client and Gateway, there are about seven new skills/tools that I have experienced and deployed into the project. 
-    
+     
     The first two skills I learned were the TCP and UDP protocols. It took the longest to teach myself and learn about those two protocols. Also, using the internet protocol suite, it was such a great experience to introduce myself to how to implement the networking concepts to the project. Understanding and writing the configuration file was new, but I needed to experience some time in the programming journey. As a purpose of connecting multiple applications to multiple target applications (many-one, many-one relationship), better assignment of a specific port based on the application and its communication protocol was somewhat I learned how to plan it better out next time when I work on the networking-related project. 
     
     The third skill that I learned was Logging software. Since taking only introductory class, I was used to just doing assertions, throwing run time errors, etc. However, throughout the project, I got a chance to experience one of the most popular logging tools, Log4j, to log in the preferred format of messages for debugging purposes.
@@ -474,7 +455,7 @@ Though this could be a cliche, I really gained project experience unprecedented 
 3. If you had a time machine and could go back to the beginning, what would you have done differently?
 
      I would have taken the course with more knowledge of computer science. Since working on the project with a background of elemental programming knowledge, it was challenging to teach me several programming concepts in a short period. The main struggle was teaching myself the networking knowledge and solely implementing the self-taught idea.
-    
+     
     I had often thought if I had already learned that knowledge in the classes that I would learn in the nearest future, I would have more time to dive deeper to create a more optimized and well-structured project for the course. Since deep-diving into the project, it would help me get exposed to more details of specific software or protocols (Vagrant, FIX, Aeron, etc.) and better understand them. Also, I could have finished my portion earlier to support those who need more help.  
 
 4. If you were to continue working on this project, what would you continue to do to improve it, how, and why?
@@ -485,7 +466,6 @@ Though this could be a cliche, I really gained project experience unprecedented 
     
     Finally, to make this project more user-likable, I would also work on pretty pictures / GUIs / user-friendly UI. I would work on [enhancing](https://www.bitmex.com/app/trade/XBTUSD) the frontend using Javascript to create a better user experience. 
     
-    
 5. What advice do you offer to future students taking this course and working on their semester-long project (besides “start earlier”... everyone ALWAYS says that). Providing detailed thoughtful advice to future students will be weighed heavily in evaluating your responses. 
 
     I would start from when the time of group matching, I think having a poll of indicating the strength of certain skillset (eg. Java - 5, Financial analysis - 3, Cloud DB - 6) for better teammate matching experience is needed. I liked the way how professor emphasized and focus on creating a good project design so the project does not got to the wrong direction. 
@@ -495,7 +475,6 @@ Though this could be a cliche, I really gained project experience unprecedented 
     During the weekly team meeting, I would recommend the team should talk details about teammate's progress and review their process/timeline often when they work on the project not to fall behind. Thus, putting a thorough evalution of the technologies for the project is definitely recommended. 
     
     Finally, the potential of this course is maximized when the well-knowledged programmer works on the project since High Frequency Trading project recommends some networking related notion to focus on more at optimization and better output.  
-
 
 
 
