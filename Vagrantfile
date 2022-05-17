@@ -28,6 +28,7 @@ Vagrant.configure("2") do |config|
         end
 
         client.vm.network "private_network", ip: "192.168.0.21", virtualbox__intnet: "exchange_network", nic_type: "virtio"
+        client.vm.network "forwarded_port", guest: 8080, host: 8080
         client.vm.provision "shell", path: "scripts/client_install.sh"
     end
 

@@ -1,14 +1,14 @@
 {
-  "name": "perspective-gemini",
+  "name": "perspective-exchange",
   "version": "0.0.1",
-  "description": "A demo using @finos/perspective, perspective-python, and the Gemini API sandbox to visualize and analyse an order book.",
+  "description": "A demo using @finos/perspective, perspective-python to visualize and analyse orderbooks.",
   "main": "./dist/index.js",
   "browser": "./dist/index.js",
   "private": true,
   "scripts": {
     "start": "yarn start:client & yarn start:server",
-    "start:client": "webpack serve",
-    "start:server": "python3 src/server/server.py",
+    "start:client": "webpack serve --host 0.0.0.0",
+    "start:server": "python3.9 src/server/server.py",
     "build": "webpack --color"
   },
   "keywords": [],
