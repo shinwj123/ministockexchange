@@ -1,8 +1,3 @@
----
-title: 'Mini Exchange Final Report'
-disqus: hackmd
----
-
 Mini Exchange Project Report
 ===
 An Order Matching Engine, Gateway, and Tickerplant in Java SE 11
