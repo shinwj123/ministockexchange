@@ -23,7 +23,7 @@ Gitlab: [@yuduc2](https://gitlab.engr.illinois.edu/yuduc2)
 
 
 ### Wonjong “Jeff” Shin (wonjong2@illinois.edu)
-Wonjong (Jeff) is a current Junior at the University of Illinois at Urbana-Champaign studying Computer Science graduating in Spring 2024. During Summer 2022, Jeff will be working as a solution architect-engineer at Meissa, a Drone Data Platform with AI. Jeff enjoys programming in Java and Python, focusing on backend relational cloud database-centric web-based application development. 
+Wonjong (Jeff) is a current Junior at the University of Illinois at Urbana-Champaign studying Computer Science graduating in Spring 2024. During Summer 2022, Jeff will be working as a software engineer at Abbvie, an American publicly traded biopharmaceutical company. Jeff enjoys programming in Java and Python, focusing on backend relational cloud database-centric web-based application development. 
 
 LinkedIn: [/in/jeff-shin](https://www.linkedin.com/in/jeff-shin/)
 
